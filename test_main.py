@@ -10,16 +10,22 @@ import main
 class TestMain(unittest.TestCase):
     """Provide tests for main script."""
 
+    def setUp(self) -> None:
+        self.repo = Repo()
+        self.current_branch = self.repo.active_branch
+        self.repo.remote().fetch()
+        self.repo.git.checkout('test-image-change-1')
+
+    def tearDown(self) -> None:
+        self.repo.git.checkout(self.current_branch)
+
     def test_get_changes_from_last_commit(self: Self) -> None:
         """
         A repo commit change should be found in the most recent commit.
 
         :return:
         """
-        repo = Repo()
-        repo.remote().fetch()
-        repo.git.checkout('test-image-change-1')
-        changes = main.get_changes_from_last_commit(repo)
+        changes = main.get_changes_from_last_commit(self.repo)
         self.assertEqual([{'ghi-client': '75ea3c7265ef1bf821397f88e8d42efdeea9561e'}], changes)
 
     def test_parse_repo_name(self: Self) -> None:
