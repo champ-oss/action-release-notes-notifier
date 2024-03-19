@@ -17,6 +17,7 @@ class TestMain(unittest.TestCase):
         :return:
         """
         repo = Repo()
+        repo.remote().fetch()
         repo.git.checkout('test-image-change-1')
         changes = main.get_changes_from_last_commit(repo)
         self.assertEqual([{'ghi-client': '75ea3c7265ef1bf821397f88e8d42efdeea9561e'}], changes)
