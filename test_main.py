@@ -10,13 +10,23 @@ import main
 class TestMain(unittest.TestCase):
     """Provide tests for main script."""
 
-    def setUp(self) -> None:
+    def setUp(self: Self) -> None:
+        """
+        Set up the environment for tests.
+
+        :return:
+        """
         self.repo = Repo()
         self.current_branch = self.repo.active_branch
         self.repo.remote().fetch()
         self.repo.git.checkout('test-image-change-1')
 
-    def tearDown(self) -> None:
+    def tearDown(self: Self) -> None:
+        """
+        Clean up the environment after tests.
+
+        :return:
+        """
         self.repo.git.checkout(self.current_branch)
 
     def test_get_changes_from_last_commit(self: Self) -> None:
