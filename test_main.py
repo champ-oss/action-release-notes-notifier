@@ -1,7 +1,7 @@
 """Provide tests for example handler."""
 import unittest
+from unittest.mock import MagicMock
 
-from git import Repo
 from typing_extensions import Self
 
 import main
@@ -16,10 +16,7 @@ class TestMain(unittest.TestCase):
 
         :return:
         """
-        self.repo = Repo()
-        self.current_branch = self.repo.active_branch
-        self.repo.remote().fetch()
-        self.repo.git.checkout('test-image-change-1')
+        pass
 
     def tearDown(self: Self) -> None:
         """
@@ -27,16 +24,7 @@ class TestMain(unittest.TestCase):
 
         :return:
         """
-        self.repo.git.checkout(self.current_branch)
-
-    def test_get_changes_from_last_commit(self: Self) -> None:
-        """
-        A repo commit change should be found in the most recent commit.
-
-        :return:
-        """
-        changes = main.get_changes_from_last_commit(self.repo)
-        self.assertEqual([{'ghi-client': '75ea3c7265ef1bf821397f88e8d42efdeea9561e'}], changes)
+        pass
 
     def test_parse_repo_name(self: Self) -> None:
         """
@@ -71,3 +59,19 @@ class TestMain(unittest.TestCase):
         self.assertIsNone(main.parse_commit('name_suffix : "read_only"'))
         self.assertIsNone(main.parse_commit('LOCATIONS = "classpath:flyway/migrations,classpath:flyway/foo/bar"'))
         self.assertIsNone(main.parse_commit('  JAVA_OPTS = "--add-opens -javaagent:/opt/foo/foo.jar"'))
+
+    def test_get_pull_request_summary_from_commit(self) -> None:
+        """
+        A summary of pull requests should be returned from a commit.
+
+        :return:
+        """
+        org = MagicMock()
+        repo = MagicMock()
+        repo.get_commit.return_value.get_pulls.return_value = [
+            MagicMock(html_url='https://foo.com', title='Pull Request 1', number=1)
+        ]
+        org.get_repo.return_value = repo
+
+        summary = main.get_pull_request_summary_from_commit(org, 'test-repo-1', 'abc123')
+        self.assertEqual('\n \t • *<https://foo.com|Pull Request 1>* #1', summary)
