@@ -1,0 +1,15 @@
+name: 'action-release-notes-notifier'
+description: Parses the most recent commit for changes to variables.
+inputs:
+  token:
+    description: 'GitHub Token or PAT'
+    default: ${{ github.token }}
+
+runs:
+  using: "composite"
+  steps:
+    - run: python ${{ github.action_path }}/main.py
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        TOKEN: ${{ inputs.token }}
