@@ -74,7 +74,7 @@ class TestMain(unittest.TestCase):
         org.get_repo.return_value = repo
 
         summary = main.get_pull_request_summary_from_commit(org, 'test-repo-1', 'abc123')
-        self.assertEqual('\n \t • *<https://foo.com|Pull Request 1>* #1', summary)
+        self.assertEqual('test-repo-1\n \t • *<https://foo.com|Pull Request 1>* #1', summary)
 
     def test_get_changes_from_last_commit(self: Self) -> None:
         """

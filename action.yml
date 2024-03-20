@@ -4,6 +4,9 @@ inputs:
   organization:
     description: 'GitHub organization name'
     required: true
+  slack-webhook:
+    description: 'Slack Webhook URL'
+    required: true
   token:
     description: 'GitHub Token or PAT'
     default: ${{ github.token }}
@@ -24,3 +27,4 @@ runs:
       env:
         TOKEN: ${{ inputs.token }}
         ORGANIZATION: ${{ inputs.organization }}
+        SLACK_WEBHOOK: ${{ inputs.slack-webhook }}

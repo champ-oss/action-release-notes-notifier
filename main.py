@@ -8,6 +8,7 @@ from typing import Optional, Dict
 from git import Repo
 from github import Github, Auth
 from github.Organization import Organization
+from slack_sdk import WebhookClient
 
 logging.basicConfig(
     format='%(asctime)s [%(levelname)8s] %(message)s (%(filename)s:%(lineno)s)',
@@ -30,9 +31,34 @@ def main() -> None:
     github = github_session(os.getenv('TOKEN'))
     org = github.get_organization(os.getenv('ORGANIZATION'))
 
+    summary = ''
     for repo_name, commit in changes.items():
-        summary = get_pull_request_summary_from_commit(org, repo_name, commit)
-        logger.info(summary)
+        summary += get_pull_request_summary_from_commit(org, repo_name, commit)
+        summary += '\n\n'
+
+
+def send_slack(message: str) -> None:
+    """
+    Send a message to Slack.
+
+    :param message: message to send
+    :return: None
+    """
+    webhook_client = WebhookClient(os.getenv('SLACK_WEBHOOK'))
+    response = webhook_client.send(
+        text='fallback',
+        blocks=[
+            {
+                'type': 'section',
+                'text': {
+                    'type': 'mrkdwn',
+                    'text': message
+                }
+            }
+        ]
+    )
+    assert response.status_code == 200
+    assert response.body == 'ok'
 
 
 def get_pull_request_summary_from_commit(org: Organization, repo_name: str, commit: str) -> str:
@@ -48,9 +74,9 @@ def get_pull_request_summary_from_commit(org: Organization, repo_name: str, comm
     repo = org.get_repo(repo_name)
 
     logger.info(f'getting pull requests for commit:{commit} in repo:{repo_name}')
-    summary = ''
+    summary = repo_name
     for pull_request in repo.get_commit(commit).get_pulls():
-        logger.info(pull_request.title)
+        logger.info(f'found pull request:#{pull_request.number} {pull_request.title}')
         summary += f'\n \t • *<{pull_request.html_url}|{pull_request.title}>* #{pull_request.number}'
 
     return summary
