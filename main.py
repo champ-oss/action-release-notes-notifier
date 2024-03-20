@@ -6,7 +6,7 @@ import re
 from typing import Optional, Dict
 
 from git import Repo
-from github import Github, Auth
+from github import Github, Auth, UnknownObjectException
 from github.Organization import Organization
 from slack_sdk import WebhookClient
 
@@ -73,11 +73,16 @@ def get_pull_request_summary_from_commit(org: Organization, repo_name: str, comm
     :param commit: commit to find pull requests for
     :return: summary of pull requests
     """
+    summary = repo_name
     logger.info(f'loading repository:{repo_name}')
-    repo = org.get_repo(repo_name)
+    try:
+        repo = org.get_repo(repo_name)
+    except UnknownObjectException as e:
+        logger.error(e)
+        summary += f'\n \t • unable to find repository'
+        return summary
 
     logger.info(f'getting pull requests for commit:{commit} in repo:{repo_name}')
-    summary = repo_name
     for pull_request in repo.get_commit(commit).get_pulls():
         logger.info(f'found pull request:#{pull_request.number} {pull_request.title}')
         summary += f'\n \t • *<{pull_request.html_url}|{pull_request.title}>* #{pull_request.number}'
