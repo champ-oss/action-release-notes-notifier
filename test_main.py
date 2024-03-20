@@ -97,3 +97,16 @@ class TestMain(unittest.TestCase):
         repo.head.commit.diff.return_value = [file1, file2]
         changes = main.get_changes_from_last_commit(repo)
         self.assertEqual({'test-repo-1': 'abc456', 'test-repo-2': 'abc456'}, changes)
+
+    def test_matches_file_pattern(self: Self) -> None:
+        """
+        A file path should match a pattern.
+
+        :return:
+        """
+        self.assertTrue(main.matches_file_pattern('terraform/env/dev/dev-defaults.tfvars', '.*dev.*.tfvars'))
+        self.assertTrue(main.matches_file_pattern('terraform/env/dev/dev.tfvars', '.*dev.*.tfvars'))
+        self.assertTrue(main.matches_file_pattern('terraform/env/dev/dev-foo.tfvars', '.*dev.*.tfvars'))
+        self.assertFalse(main.matches_file_pattern('terraform/env/test/test.tfvars', '.*dev.*.tfvars'))
+        self.assertFalse(main.matches_file_pattern('terraform/main.tf', '.*dev.*.tfvars'))
+        self.assertFalse(main.matches_file_pattern('terraform/main.tfvars', '.*dev.*.tfvars'))

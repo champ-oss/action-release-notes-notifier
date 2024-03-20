@@ -31,7 +31,7 @@ def main() -> None:
     github = github_session(os.getenv('TOKEN'))
     org = github.get_organization(os.getenv('ORGANIZATION'))
 
-    summary = ''
+    summary = f'The {os.getenv("ENVIRONMENT")} environment has been updated'
     for repo_name, commit in changes.items():
         summary += get_pull_request_summary_from_commit(org, repo_name, commit)
         summary += '\n\n'
@@ -96,11 +96,26 @@ def get_changes_from_last_commit(repo: Repo) -> Dict[str, str]:
 
     for item in repo.head.commit.diff('HEAD~1', create_patch=True):
         logger.info(f'changed file: {item.b_path}')
+        if not matches_file_pattern(item.b_path, os.getenv('FILE_PATTERN', '.*')):
+            logger.info(f'skipping file: {item.b_path}')
+            continue
 
         changes.update(get_repo_commit_changes(item.b_blob.data_stream.read().decode('utf-8'),
                                                item.a_blob.data_stream.read().decode('utf-8')))
 
     return changes
+
+
+def matches_file_pattern(file_path: str, pattern: str) -> bool:
+    """
+    Check if a file path matches the regex pattern.
+
+    :param file_path: path of the file
+    :param pattern: regex pattern to test
+    :return: bool
+    """
+    match = re.match(pattern, file_path)
+    return match is not None
 
 
 def get_repo_commit_changes(before: str, after: str) -> Dict[str, str]:

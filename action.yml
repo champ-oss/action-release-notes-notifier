@@ -1,6 +1,12 @@
 name: 'action-release-notes-notifier'
 description: Parses the most recent commit for changes to variables.
 inputs:
+  environment:
+    description: 'Name of environment'
+    required: true
+  file-pattern:
+    description: 'Pattern to match files'
+    required: true
   organization:
     description: 'GitHub organization name'
     required: true
@@ -25,6 +31,8 @@ runs:
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       env:
-        TOKEN: ${{ inputs.token }}
+        ENVIRONMENT: ${{ inputs.environment }}
+        FILE_PATTERN: ${{ inputs.file-pattern }}
         ORGANIZATION: ${{ inputs.organization }}
         SLACK_WEBHOOK: ${{ inputs.slack-webhook }}
+        TOKEN: ${{ inputs.token }}
