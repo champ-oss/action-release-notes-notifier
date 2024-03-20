@@ -30,7 +30,7 @@ def main(repo: Repo, webhook_client: WebhookClient, github_session: Github,
 
     org = github_session.get_organization(github_organization)
 
-    summary = f'The {environment_name} environment has been updated'
+    summary = f'The {environment_name} environment has been updated\n'
     for repo_name, commit in changes.items():
         summary += get_pull_request_summary_from_commit(org, repo_name, commit)
         summary += '\n\n'
