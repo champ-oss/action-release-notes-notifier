@@ -9,6 +9,10 @@ from git import Repo
 from github import Github, Auth
 from github.Organization import Organization
 
+logging.basicConfig(
+    format='%(asctime)s [%(levelname)8s] %(message)s (%(filename)s:%(lineno)s)',
+    level=logging.INFO
+)
 logger = logging.getLogger(__name__)
 
 
@@ -40,10 +44,13 @@ def get_pull_request_summary_from_commit(org: Organization, repo_name: str, comm
     :param commit: commit to find pull requests for
     :return: summary of pull requests
     """
+    logger.info(f'loading repository:{repo_name}')
     repo = org.get_repo(repo_name)
 
+    logger.info(f'getting pull requests for commit:{commit} in repo:{repo_name}')
     summary = ''
     for pull_request in repo.get_commit(commit).get_pulls():
+        logger.info(pull_request.title)
         summary += f'\n \t • *<{pull_request.html_url}|{pull_request.title}>* #{pull_request.number}'
 
     return summary
