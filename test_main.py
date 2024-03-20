@@ -60,7 +60,7 @@ class TestMain(unittest.TestCase):
         self.assertIsNone(main.parse_commit('LOCATIONS = "classpath:flyway/migrations,classpath:flyway/foo/bar"'))
         self.assertIsNone(main.parse_commit('  JAVA_OPTS = "--add-opens -javaagent:/opt/foo/foo.jar"'))
 
-    def test_get_pull_request_summary_from_commit(self) -> None:
+    def test_get_pull_request_summary_from_commit(self: Self) -> None:
         """
         A summary of pull requests should be returned from a commit.
 
@@ -75,3 +75,25 @@ class TestMain(unittest.TestCase):
 
         summary = main.get_pull_request_summary_from_commit(org, 'test-repo-1', 'abc123')
         self.assertEqual('\n \t • *<https://foo.com|Pull Request 1>* #1', summary)
+
+    def test_get_changes_from_last_commit(self: Self) -> None:
+        """
+        A diff of changes should be returned from the most recent commit.
+
+        :return:
+        """
+        repo = MagicMock()
+
+        file1 = MagicMock()
+        file1.b_path = 'foo/bar1.txt'
+        file1.b_blob.data_stream.read.return_value = b'test_repo_1 = "123.foo.com/test-repo-1:abc123"'
+        file1.a_blob.data_stream.read.return_value = b'test_repo_1 = "123.foo.com/test-repo-1:abc456"'
+
+        file2 = MagicMock()
+        file2.b_path = 'foo/bar2.txt'
+        file2.b_blob.data_stream.read.return_value = b'test_repo_2 = "123.foo.com/test-repo-2:abc123"'
+        file2.a_blob.data_stream.read.return_value = b'test_repo_2 = "123.foo.com/test-repo-2:abc456"'
+
+        repo.head.commit.diff.return_value = [file1, file2]
+        changes = main.get_changes_from_last_commit(repo)
+        self.assertEqual({'test-repo-1': 'abc456', 'test-repo-2': 'abc456'}, changes)

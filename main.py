@@ -9,10 +9,6 @@ from git import Repo
 from github import Github, Auth
 from github.Organization import Organization
 
-logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO
-)
 logger = logging.getLogger(__name__)
 
 
@@ -60,12 +56,15 @@ def get_changes_from_last_commit(repo: Repo) -> Dict[str, str]:
     :param repo: git repository
     :return: list of changes
     """
+    changes: Dict[str, str] = {}
+
     for item in repo.head.commit.diff('HEAD~1', create_patch=True):
         logger.info(f'changed file: {item.b_path}')
 
-        changes = get_repo_commit_changes(item.b_blob.data_stream.read().decode('utf-8'),
-                                          item.a_blob.data_stream.read().decode('utf-8'))
-        return changes
+        changes.update(get_repo_commit_changes(item.b_blob.data_stream.read().decode('utf-8'),
+                                               item.a_blob.data_stream.read().decode('utf-8')))
+
+    return changes
 
 
 def get_repo_commit_changes(before: str, after: str) -> Dict[str, str]:
