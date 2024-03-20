@@ -17,37 +17,36 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def main() -> None:
+def main(repo: Repo, webhook_client: WebhookClient, github_session: Github,
+         github_organization: str, environment_name: str, file_pattern: str) -> None:
     """
     Handle the main execution of the script.
 
     :return: None
     """
-    repo = Repo()
-    changes = get_changes_from_last_commit(repo)
+    changes = get_changes_from_last_commit(repo, file_pattern)
     if not changes:
         return
 
-    github = github_session(os.getenv('TOKEN'))
-    org = github.get_organization(os.getenv('ORGANIZATION'))
+    org = github_session.get_organization(github_organization)
 
-    summary = f'The {os.getenv("ENVIRONMENT")} environment has been updated'
+    summary = f'The {environment_name} environment has been updated'
     for repo_name, commit in changes.items():
         summary += get_pull_request_summary_from_commit(org, repo_name, commit)
         summary += '\n\n'
 
-    send_slack(summary)
+    send_slack(webhook_client, summary)
 
 
-def send_slack(message: str) -> None:
+def send_slack(webhook_client: WebhookClient, message: str) -> None:
     """
     Send a message to Slack.
 
+    :param webhook_client: Slack webhook client
     :param message: message to send
     :return: None
     """
     logger.info('sending message to Slack')
-    webhook_client = WebhookClient(os.getenv('SLACK_WEBHOOK'))
     response = webhook_client.send(
         text='fallback',
         blocks=[
@@ -73,13 +72,13 @@ def get_pull_request_summary_from_commit(org: Organization, repo_name: str, comm
     :param commit: commit to find pull requests for
     :return: summary of pull requests
     """
-    summary = repo_name
+    summary = f'\n{repo_name}'
     logger.info(f'loading repository:{repo_name}')
     try:
         repo = org.get_repo(repo_name)
     except UnknownObjectException as e:
-        logger.error(e)
-        summary += f'\n \t • unable to find repository'
+        logger.warning(e)
+        summary += '\n \t • unable to find repository'
         return summary
 
     logger.info(f'getting pull requests for commit:{commit} in repo:{repo_name}')
@@ -90,7 +89,7 @@ def get_pull_request_summary_from_commit(org: Organization, repo_name: str, comm
     return summary
 
 
-def get_changes_from_last_commit(repo: Repo) -> Dict[str, str]:
+def get_changes_from_last_commit(repo: Repo, file_pattern: str) -> Dict[str, str]:
     """
     Get a diff of changes from the most recent commit.
 
@@ -101,7 +100,7 @@ def get_changes_from_last_commit(repo: Repo) -> Dict[str, str]:
 
     for item in repo.head.commit.diff('HEAD~1', create_patch=True):
         logger.info(f'changed file: {item.b_path}')
-        if not matches_file_pattern(item.b_path, os.getenv('FILE_PATTERN', '.*')):
+        if not matches_file_pattern(item.b_path, file_pattern):
             logger.info(f'skipping file: {item.b_path}')
             continue
 
@@ -178,16 +177,10 @@ def parse_commit(line: str) -> Optional[str]:
     return None
 
 
-def github_session(token: str) -> Github:
-    """
-    Login to GitHub and return a session.
-
-    :return: GitHub session
-    """
-    logger.info('logging in to GitHub using auth token')
-    auth = Auth.Token(token)
-    return Github(auth=auth)
-
-
 if __name__ == '__main__':
-    main()
+    main(repo=Repo(),
+         webhook_client=WebhookClient(os.getenv('SLACK_WEBHOOK')),
+         github_session=Github(auth=Auth.Token(os.getenv('TOKEN'))),
+         github_organization=os.getenv('ORGANIZATION'),
+         environment_name=os.getenv('ENVIRONMENT'),
+         file_pattern=os.getenv('FILE_PATTERN'))
