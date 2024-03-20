@@ -36,6 +36,8 @@ def main() -> None:
         summary += get_pull_request_summary_from_commit(org, repo_name, commit)
         summary += '\n\n'
 
+    send_slack(summary)
+
 
 def send_slack(message: str) -> None:
     """
@@ -44,6 +46,7 @@ def send_slack(message: str) -> None:
     :param message: message to send
     :return: None
     """
+    logger.info('sending message to Slack')
     webhook_client = WebhookClient(os.getenv('SLACK_WEBHOOK'))
     response = webhook_client.send(
         text='fallback',
