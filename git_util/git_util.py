@@ -51,6 +51,9 @@ class GitUtil:
         file_diffs: List[FileDiff] = []
 
         for item in self.repo.head.commit.diff('HEAD~1', create_patch=True):
+            if not item or not item.b_path:
+                continue
+
             logger.info(f'found changed file: {item.b_path}')
 
             if re.match(file_name_pattern_filter, item.b_path) is None:

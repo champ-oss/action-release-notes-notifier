@@ -87,3 +87,21 @@ class TestGitUtil(unittest.TestCase):
         git_util = GitUtil(repo)
         file_diffs = git_util.get_file_diffs_from_last_commit('.*dev.*.tfvars')
         self.assertEqual(len(file_diffs), 1)
+
+    def test_get_file_diffs_from_last_commit_with_invalid_file(self: Self) -> None:
+        """The file diff should be skipped if it is None."""
+        repo = MagicMock()
+        repo.head.commit.diff.return_value = [None]
+        git_util = GitUtil(repo)
+        file_diffs = git_util.get_file_diffs_from_last_commit('.*dev.*.tfvars')
+        self.assertEqual(len(file_diffs), 0)
+
+    def test_get_file_diffs_from_last_commit_with_invalid_file_path(self: Self) -> None:
+        """The file diff should be skipped if b_path is None."""
+        repo = MagicMock()
+        repo.head.commit.diff.return_value = [
+            MagicMock(b_path=None)
+        ]
+        git_util = GitUtil(repo)
+        file_diffs = git_util.get_file_diffs_from_last_commit('.*dev.*.tfvars')
+        self.assertEqual(len(file_diffs), 0)
