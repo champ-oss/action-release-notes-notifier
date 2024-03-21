@@ -43,9 +43,16 @@ class TestMain(unittest.TestCase):
         slack_notifier = MagicMock()
         github_util = MagicMock()
         github_util.get_pull_requests_for_commit.side_effect = [
-            [PullRequest(url='https://foo.com/test_repo_1', title='Pull Request 123', number=123)],
-            [PullRequest(url='https://foo.com/test_repo_2', title='Pull Request 456', number=456)],
-            [PullRequest(url='https://foo.com/test_repo_3', title='Pull Request 789', number=789)]
+            [
+                PullRequest(url='https://foo.com/test_repo_1', title='Pull Request 123a', number=123),
+                PullRequest(url='https://foo.com/test_repo_1', title='Pull Request 123b', number=124)
+            ],
+            [
+                PullRequest(url='https://foo.com/test_repo_2', title='Pull Request 456', number=456)
+            ],
+            [
+                PullRequest(url='https://foo.com/test_repo_3', title='Pull Request 789', number=789)
+            ]
         ]
 
         main.main(git_util=git_util,
@@ -58,7 +65,8 @@ class TestMain(unittest.TestCase):
             'The Dev environment has been updated\n'
             '\n'
             'test-repo-1\n'
-            ' \t • *<https://foo.com/test_repo_1|Pull Request 123>* #123\n'
+            ' \t • *<https://foo.com/test_repo_1|Pull Request 123a>* #123\n'
+            ' \t • *<https://foo.com/test_repo_1|Pull Request 123b>* #124\n'
             '\n'
             '\n'
             'test-repo-2\n'
