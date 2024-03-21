@@ -1,9 +1,8 @@
 """Parses the most recent commit for changes to variables."""
 import logging
 import os
-import re
-from typing import Optional, Dict, Iterator
 
+from diff_parser.diff_parser import DiffParser
 from git_util.git_util import GitUtil
 from github_util.github_util import GitHubUtil
 from message_formatter.message_formatter import MessageFormatter
@@ -30,65 +29,11 @@ def main(git_util: GitUtil, slack_notifier: SlackNotifier, github_util: GitHubUt
     message_formatter = MessageFormatter(environment_name)
 
     for file_diff in file_diffs:
-        for repo_name, commit in get_repo_commit_changes(file_diff.unified_diff).items():
+        for repo_name, commit in DiffParser.get_repo_commit_changes(file_diff.unified_diff).items():
             pull_requests = github_util.get_pull_requests_for_commit(repo_name, commit)
             message_formatter.add_repo_pull_request_summary(repo_name=repo_name, pull_requests=pull_requests)
 
     slack_notifier.send_markdown(message_formatter.get_final_summary())
-
-
-def get_repo_commit_changes(unified_diff: Iterator[str]) -> Dict[str, str]:
-    """
-    Compare the before and after strings and return a list of changes.
-
-    :param unified_diff: unified diff string
-    :return: list of changes
-    """
-    changes: Dict[str, str] = {}
-
-    for line in unified_diff:
-        if not line.startswith('+'):
-            continue
-
-        repo = parse_repo_name(line)
-        commit = parse_commit(line)
-        if repo and commit:
-            logger.info(f'changed: repo:{repo} commit:{commit}')
-            changes[repo] = commit
-
-    return changes
-
-
-def parse_repo_name(line: str) -> Optional[str]:
-    """
-    Parse the repository name from a line of text.
-
-    Example of line: (should return: test-repo-1)
-    test_repo_1 = "123.foo.com/bar/test-repo-1:abc123"
-
-    :param line:
-    :return:
-    """
-    match = re.search(r'([^/":]+):\w+\"', line)
-    if match:
-        return match.group(1)
-    return None
-
-
-def parse_commit(line: str) -> Optional[str]:
-    """
-    Parse the commit hash from a line of text.
-
-    Example of line: (should return: abc123)
-    test_repo_1 = "123.foo.com/bar/test-repo-1:abc123"
-
-    :param line:
-    :return:
-    """
-    match = re.search(r'\w:(\w+)\"', line)
-    if match:
-        return match.group(1)
-    return None
 
 
 if __name__ == '__main__':
