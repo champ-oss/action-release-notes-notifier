@@ -1,6 +1,5 @@
 """Provide tests for example handler."""
 import unittest
-from pathlib import Path
 from unittest.mock import MagicMock
 
 from typing_extensions import Self
@@ -12,22 +11,6 @@ from github_util.pull_request import PullRequest
 
 class TestMain(unittest.TestCase):
     """Provide tests for main script."""
-
-    def setUp(self: Self) -> None:
-        """
-        Set up the environment for tests.
-
-        :return:
-        """
-        pass
-
-    def tearDown(self: Self) -> None:
-        """
-        Clean up the environment after tests.
-
-        :return:
-        """
-        pass
 
     def test_main(self: Self) -> None:
         """
@@ -71,11 +54,22 @@ class TestMain(unittest.TestCase):
                   environment_name='Dev',
                   file_pattern='.*dev.*.tfvars')
 
-        slack_notifier.send_markdown.assert_called_once()
-
-        with Path('test_expected_message.txt').open() as f:
-            expected_slack_message = f.read()
-        self.assertEquals(expected_slack_message, slack_notifier.send_markdown.call_args[0][0])
+        expected_slack_message = (
+            'The Dev environment has been updated\n'
+            '\n'
+            'test-repo-1\n'
+            ' \t • *<https://foo.com/test_repo_1|Pull Request 123>* #123\n'
+            '\n'
+            '\n'
+            'test-repo-2\n'
+            ' \t • *<https://foo.com/test_repo_2|Pull Request 456>* #456\n'
+            '\n'
+            '\n'
+            'test-repo-3\n'
+            ' \t • *<https://foo.com/test_repo_3|Pull Request 789>* #789\n'
+            '\n'
+        )
+        self.assertEqual(expected_slack_message, slack_notifier.send_markdown.call_args[0][0])
 
     def test_parse_repo_name(self: Self) -> None:
         """
