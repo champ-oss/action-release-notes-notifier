@@ -18,9 +18,9 @@ class SlackNotifier:
         :param webhook_client: Optionally inject a WebhookClient
         """
         if not webhook_client:
-            self.webhook_client = WebhookClient(webhook_url)
+            self._webhook_client = WebhookClient(webhook_url)
         else:
-            self.webhook_client = webhook_client
+            self._webhook_client = webhook_client
 
     def send_markdown(self: Self, message: str) -> None:
         """
@@ -29,8 +29,12 @@ class SlackNotifier:
         :param message: message to send
         :return: None
         """
+        if not message:
+            logger.info('not sending Slack message because message is empty')
+            return
+
         logger.info('sending message to Slack')
-        response = self.webhook_client.send(
+        response = self._webhook_client.send(
             text='fallback',
             blocks=[
                 {

@@ -32,3 +32,11 @@ class TestSlackNotifier(unittest.TestCase):
                 }
             ]
         )
+
+    def test_send_markdown_when_empty(self: Self) -> None:
+        """The send_markdown function should not send a message when the message is empty."""
+        webhook_client = MagicMock()
+        slack_notifier = SlackNotifier('https://example.com', webhook_client)
+        slack_notifier.send_markdown(None)
+        slack_notifier.send_markdown('')
+        webhook_client.send.assert_not_called()

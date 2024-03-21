@@ -34,9 +34,7 @@ def main(git_util: GitUtil, slack_notifier: SlackNotifier, github_util: GitHubUt
             pull_requests = github_util.get_pull_requests_for_commit(repo_name, commit)
             message_formatter.add_repo_pull_request_summary(repo_name=repo_name, pull_requests=pull_requests)
 
-    summary = message_formatter.get_final_summary()
-    if summary:
-        slack_notifier.send_markdown(message_formatter.get_final_summary())
+    slack_notifier.send_markdown(message_formatter.get_final_summary())
 
 
 def get_repo_commit_changes(unified_diff: Iterator[str]) -> Dict[str, str]:

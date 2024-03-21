@@ -79,8 +79,8 @@ class TestMain(unittest.TestCase):
         )
         self.assertEqual(expected_slack_message, slack_notifier.send_markdown.call_args[0][0])
 
-    def test_main_should_not_send_slack_message_when_summary_is_empty(self: Self) -> None:
-        """The main function should not send the Slack message when no repo information is added to the summary."""
+    def test_main_slack_message_should_be_none_when_summary_is_empty(self: Self) -> None:
+        """The Slack message should be None e when no repo information is added to the summary."""
         git_util = MagicMock()
         git_util.get_file_diffs_from_last_commit.return_value = [
             FileDiff(file_name='terraform/env/dev/dev-a.tfvars', unified_diff=[
@@ -98,7 +98,8 @@ class TestMain(unittest.TestCase):
                   github_util=MagicMock(),
                   environment_name='Dev',
                   file_pattern='.*dev.*.tfvars')
-        slack_notifier.send_markdown.assert_not_called()
+
+        self.assertIsNone(slack_notifier.send_markdown.call_args[0][0])
 
     def test_parse_repo_name(self: Self) -> None:
         """
