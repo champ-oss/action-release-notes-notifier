@@ -8,6 +8,7 @@ from typing import Optional, Dict
 from git import Repo
 
 from github_util.github_util import GitHubUtil
+from message_formatter.message_formatter import MessageFormatter
 from slack_notifier.slack_notifier import SlackNotifier
 
 logging.basicConfig(
@@ -28,14 +29,14 @@ def main(repo: Repo, slack_notifier: SlackNotifier, github_util: GitHubUtil,
     if not changes:
         return
 
-    summary = f'The {environment_name} environment has been updated\n'
-    for repo_name, commit in changes.items():
-        summary += f'\n{repo_name}'
-        for pull_request in github_util.get_pull_requests_for_commit(repo_name, commit):
-            summary += f'\n \t • *<{pull_request.url}|{pull_request.title}>* #{pull_request.number}'
-        summary += '\n\n'
+    message_formatter = MessageFormatter(environment_name)
 
-    slack_notifier.send_markdown(summary)
+    for repo_name, commit in changes.items():
+        message_formatter.add_repo_pull_request_summary(repo_name=repo_name,
+                                                        pull_requests=github_util.get_pull_requests_for_commit(
+                                                            repo_name, commit))
+
+    slack_notifier.send_markdown(message_formatter.get_summary())
 
 
 def get_changes_from_last_commit(repo: Repo, file_pattern: str) -> Dict[str, str]:
