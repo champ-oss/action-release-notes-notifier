@@ -79,6 +79,27 @@ class TestMain(unittest.TestCase):
         )
         self.assertEqual(expected_slack_message, slack_notifier.send_markdown.call_args[0][0])
 
+    def test_main_should_not_send_slack_message_when_summary_is_empty(self: Self) -> None:
+        """The main function should not send the Slack message when no repo information is added to the summary."""
+        git_util = MagicMock()
+        git_util.get_file_diffs_from_last_commit.return_value = [
+            FileDiff(file_name='terraform/env/dev/dev-a.tfvars', unified_diff=[
+                '--- \n',
+                '+++ \n',
+                '@@ -1,2 +1,2 @@\n'
+                '-foo         = "bar1"',
+                '+foo         = "bar2"'
+            ])
+        ]
+
+        slack_notifier = MagicMock()
+        main.main(git_util=git_util,
+                  slack_notifier=slack_notifier,
+                  github_util=MagicMock(),
+                  environment_name='Dev',
+                  file_pattern='.*dev.*.tfvars')
+        slack_notifier.send_markdown.assert_not_called()
+
     def test_parse_repo_name(self: Self) -> None:
         """
         A repo name should be parsed from a line of text.
@@ -112,16 +133,3 @@ class TestMain(unittest.TestCase):
         self.assertIsNone(main.parse_commit('name_suffix : "read_only"'))
         self.assertIsNone(main.parse_commit('LOCATIONS = "classpath:flyway/migrations,classpath:flyway/foo/bar"'))
         self.assertIsNone(main.parse_commit('  JAVA_OPTS = "--add-opens -javaagent:/opt/foo/foo.jar"'))
-
-    def test_matches_file_pattern(self: Self) -> None:
-        """
-        A file path should match a pattern.
-
-        :return:
-        """
-        self.assertTrue(main.matches_file_pattern('terraform/env/dev/dev-defaults.tfvars', '.*dev.*.tfvars'))
-        self.assertTrue(main.matches_file_pattern('terraform/env/dev/dev.tfvars', '.*dev.*.tfvars'))
-        self.assertTrue(main.matches_file_pattern('terraform/env/dev/dev-foo.tfvars', '.*dev.*.tfvars'))
-        self.assertFalse(main.matches_file_pattern('terraform/env/test/test.tfvars', '.*dev.*.tfvars'))
-        self.assertFalse(main.matches_file_pattern('terraform/main.tf', '.*dev.*.tfvars'))
-        self.assertFalse(main.matches_file_pattern('terraform/main.tfvars', '.*dev.*.tfvars'))

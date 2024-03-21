@@ -1,4 +1,6 @@
 """Provides functionality for formatting the notification message."""
+from typing import Optional
+
 from typing_extensions import Self
 
 from github_util.pull_request import PullRequest
@@ -7,23 +9,14 @@ from github_util.pull_request import PullRequest
 class MessageFormatter:
     """Provides functionality for formatting the notification message."""
 
-    @staticmethod
-    def _create_summary(environment_name: str) -> str:
-        """
-        Create the summary message with the title header.
-
-        :param environment_name: Name of the environment.
-        :return: summary message
-        """
-        return f'The {environment_name} environment has been updated\n'
-
     def __init__(self: Self, environment_name: str) -> None:
         """
         Initialize the message formatter.
 
         :param environment_name: Name of the environment.
         """
-        self._summary = MessageFormatter._create_summary(environment_name)
+        self._environment_name = environment_name
+        self._summary = ''
 
     def add_repo_pull_request_summary(self: Self, repo_name: str, pull_requests: list[PullRequest]) -> None:
         """
@@ -38,10 +31,12 @@ class MessageFormatter:
             self._summary += f'\n \t • *<{pull_request.url}|{pull_request.title}>* #{pull_request.number}'
         self._summary += '\n\n'
 
-    def get_summary(self: Self) -> str:
+    def get_final_summary(self: Self) -> Optional[str]:
         """
-        Get the summary message.
+        Get the final overall summary message. If no information has been added, return None.
 
         :return:
         """
-        return self._summary
+        if self._summary:
+            return f'The {self._environment_name} environment has been updated\n' + self._summary
+        return None

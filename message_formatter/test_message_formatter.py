@@ -10,11 +10,6 @@ from message_formatter.message_formatter import MessageFormatter
 class TestMessageFormatter(unittest.TestCase):
     """Provides tests for the message formatter."""
 
-    def test_create_summary(self: Self) -> None:
-        """Validate the summary message is created correctly."""
-        summary = MessageFormatter._create_summary('Dev')
-        self.assertEqual(summary, 'The Dev environment has been updated\n')
-
     def test_add_repo_pull_request_summary(self: Self) -> None:
         """Validate the pull requests are added to the summary correctly."""
         message_formatter = MessageFormatter('Dev')
@@ -41,5 +36,10 @@ class TestMessageFormatter(unittest.TestCase):
             '\n'
         )
 
-        summary = message_formatter.get_summary()
+        summary = message_formatter.get_final_summary()
         self.assertEqual(expected, summary)
+
+    def test_get_final_summary_when_empty(self: Self) -> None:
+        """The completed summary should return None if no information has been added."""
+        message_formatter = MessageFormatter('Dev')
+        self.assertIsNone(message_formatter.get_final_summary())

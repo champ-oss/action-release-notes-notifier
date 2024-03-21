@@ -34,19 +34,9 @@ def main(git_util: GitUtil, slack_notifier: SlackNotifier, github_util: GitHubUt
             pull_requests = github_util.get_pull_requests_for_commit(repo_name, commit)
             message_formatter.add_repo_pull_request_summary(repo_name=repo_name, pull_requests=pull_requests)
 
-    slack_notifier.send_markdown(message_formatter.get_summary())
-
-
-def matches_file_pattern(file_path: str, pattern: str) -> bool:
-    """
-    Check if a file path matches the regex pattern.
-
-    :param file_path: path of the file
-    :param pattern: regex pattern to test
-    :return: bool
-    """
-    match = re.match(pattern, file_path)
-    return match is not None
+    summary = message_formatter.get_final_summary()
+    if summary:
+        slack_notifier.send_markdown(message_formatter.get_final_summary())
 
 
 def get_repo_commit_changes(unified_diff: Iterator[str]) -> Dict[str, str]:
