@@ -6,6 +6,7 @@ from unittest.mock import MagicMock
 from typing_extensions import Self
 
 import main
+from github_util.github_util import GitHubUtil
 from slack_notifier.slack_notifier import SlackNotifier
 
 
@@ -82,8 +83,8 @@ class TestMain(unittest.TestCase):
 
         main.main(repo=repo,
                   slack_notifier=SlackNotifier('https://example.com', webhook_client),
-                  github_session=github_session,
-                  github_organization='test',
+                  github_util=GitHubUtil(access_token='test', organization_name='test-org',
+                                         github_session=github_session),
                   environment_name='Dev',
                   file_pattern=file_pattern)
 
@@ -126,22 +127,6 @@ class TestMain(unittest.TestCase):
         self.assertIsNone(main.parse_commit('name_suffix : "read_only"'))
         self.assertIsNone(main.parse_commit('LOCATIONS = "classpath:flyway/migrations,classpath:flyway/foo/bar"'))
         self.assertIsNone(main.parse_commit('  JAVA_OPTS = "--add-opens -javaagent:/opt/foo/foo.jar"'))
-
-    def test_get_pull_request_summary_from_commit(self: Self) -> None:
-        """
-        A summary of pull requests should be returned from a commit.
-
-        :return:
-        """
-        org = MagicMock()
-        repo = MagicMock()
-        repo.get_commit.return_value.get_pulls.return_value = [
-            MagicMock(html_url='https://foo.com', title='Pull Request 1', number=1)
-        ]
-        org.get_repo.return_value = repo
-
-        summary = main.get_pull_request_summary_from_commit(org, 'test-repo-1', 'abc123')
-        self.assertEqual('\ntest-repo-1\n \t • *<https://foo.com|Pull Request 1>* #1', summary)
 
     def test_get_changes_from_last_commit(self: Self) -> None:
         """

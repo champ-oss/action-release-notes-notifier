@@ -6,9 +6,8 @@ import re
 from typing import Optional, Dict
 
 from git import Repo
-from github import Github, Auth, UnknownObjectException
-from github.Organization import Organization
 
+from github_util.github_util import GitHubUtil
 from slack_notifier.slack_notifier import SlackNotifier
 
 logging.basicConfig(
@@ -18,8 +17,8 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def main(repo: Repo, slack_notifier: SlackNotifier, github_session: Github,
-         github_organization: str, environment_name: str, file_pattern: str) -> None:
+def main(repo: Repo, slack_notifier: SlackNotifier, github_util: GitHubUtil,
+         environment_name: str, file_pattern: str) -> None:
     """
     Handle the main execution of the script.
 
@@ -29,40 +28,14 @@ def main(repo: Repo, slack_notifier: SlackNotifier, github_session: Github,
     if not changes:
         return
 
-    org = github_session.get_organization(github_organization)
-
     summary = f'The {environment_name} environment has been updated\n'
     for repo_name, commit in changes.items():
-        summary += get_pull_request_summary_from_commit(org, repo_name, commit)
+        summary += f'\n{repo_name}'
+        for pull_request in github_util.get_pull_requests_for_commit(repo_name, commit):
+            summary += f'\n \t • *<{pull_request.url}|{pull_request.title}>* #{pull_request.number}'
         summary += '\n\n'
 
     slack_notifier.send_markdown(summary)
-
-
-def get_pull_request_summary_from_commit(org: Organization, repo_name: str, commit: str) -> str:
-    """
-    Create a summary of pull requests associated with the commit.
-
-    :param org: GitHub Organization
-    :param repo_name: name of the repository
-    :param commit: commit to find pull requests for
-    :return: summary of pull requests
-    """
-    summary = f'\n{repo_name}'
-    logger.info(f'loading repository:{repo_name}')
-    try:
-        repo = org.get_repo(repo_name)
-    except UnknownObjectException as e:
-        logger.warning(e)
-        summary += '\n \t • unable to find repository'
-        return summary
-
-    logger.info(f'getting pull requests for commit:{commit} in repo:{repo_name}')
-    for pull_request in repo.get_commit(commit).get_pulls():
-        logger.info(f'found pull request:#{pull_request.number} {pull_request.title}')
-        summary += f'\n \t • *<{pull_request.html_url}|{pull_request.title}>* #{pull_request.number}'
-
-    return summary
 
 
 def get_changes_from_last_commit(repo: Repo, file_pattern: str) -> Dict[str, str]:
@@ -156,7 +129,6 @@ def parse_commit(line: str) -> Optional[str]:
 if __name__ == '__main__':
     main(repo=Repo(),
          slack_notifier=SlackNotifier(webhook_url=os.getenv('SLACK_WEBHOOK')),
-         github_session=Github(auth=Auth.Token(os.getenv('TOKEN'))),
-         github_organization=os.getenv('ORGANIZATION'),
+         github_util=GitHubUtil(access_token=os.getenv('TOKEN'), organization_name=os.getenv('ORGANIZATION')),
          environment_name=os.getenv('ENVIRONMENT'),
          file_pattern=os.getenv('FILE_PATTERN'))

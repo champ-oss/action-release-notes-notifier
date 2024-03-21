@@ -1,4 +1,5 @@
 """Provides tests for SlackNotifier."""
+import unittest
 from unittest.mock import MagicMock
 
 from typing_extensions import Self
@@ -6,7 +7,7 @@ from typing_extensions import Self
 from slack_notifier.slack_notifier import SlackNotifier
 
 
-class TestSlackNotifier:
+class TestSlackNotifier(unittest.TestCase):
     """Provides tests for SlackNotifier."""
 
     def test_send_markdown(self: Self) -> None:
