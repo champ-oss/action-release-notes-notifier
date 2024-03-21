@@ -32,9 +32,9 @@ def main(repo: Repo, slack_notifier: SlackNotifier, github_util: GitHubUtil,
     message_formatter = MessageFormatter(environment_name)
 
     for repo_name, commit in changes.items():
-        message_formatter.add_repo_pull_request_summary(repo_name=repo_name,
-                                                        pull_requests=github_util.get_pull_requests_for_commit(
-                                                            repo_name, commit))
+        message_formatter.add_repo_pull_request_summary(
+            repo_name=repo_name, pull_requests=github_util.get_pull_requests_for_commit(repo_name, commit)
+        )
 
     slack_notifier.send_markdown(message_formatter.get_summary())
 
