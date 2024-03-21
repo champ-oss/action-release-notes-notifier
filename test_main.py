@@ -6,8 +6,8 @@ from unittest.mock import MagicMock
 from typing_extensions import Self
 
 import main
-from github_util.github_util import GitHubUtil
-from slack_notifier.slack_notifier import SlackNotifier
+from git_util.file_diff import FileDiff
+from github_util.pull_request import PullRequest
 
 
 class TestMain(unittest.TestCase):
@@ -35,64 +35,47 @@ class TestMain(unittest.TestCase):
 
         :return:
         """
-        # Prepare file diffs
-        repo = MagicMock()
-        file1 = MagicMock()
-        file1.b_path = 'terraform/env/dev/dev-a.tfvars'
-        file1.b_blob.data_stream.read.return_value = b'''
-        test_repo_1 = "123.foo.com/test-repo-1:abc123"
-        test_repo_2 = "123.foo.com/bar/test-repo-2:def123"
-        foo         = "bar1"'''
-
-        file1.a_blob.data_stream.read.return_value = b'''
-        test_repo_1 = "123.foo.com/test-repo-1:abc456"
-        test_repo_2 = "123.foo.com/bar/test-repo-2:def456"
-        foo         = "bar2"'''
-
-        file2 = MagicMock()
-        file2.b_path = 'terraform/env/dev/dev-b.tfvars'
-        file2.b_blob.data_stream.read.return_value = b'test_repo_3 = "123.foo.com/test-repo-3:ghi123"'
-        file2.a_blob.data_stream.read.return_value = b'test_repo_3 = "123.foo.com/test-repo-3:ghi456"'
-
-        repo.head.commit.diff.return_value = [file1, file2]
-
-        # Prepare pull request information
-        test_repo_1 = MagicMock()
-        test_repo_1.get_commit.return_value.get_pulls.return_value = [
-            MagicMock(html_url='https://foo.com/test_repo_1', title='Pull Request 123', number=123)
-        ]
-        test_repo_2 = MagicMock()
-        test_repo_2.get_commit.return_value.get_pulls.return_value = [
-            MagicMock(html_url='https://foo.com/test_repo_2', title='Pull Request 456', number=456)
-        ]
-        test_repo_3 = MagicMock()
-        test_repo_3.get_commit.return_value.get_pulls.return_value = [
-            MagicMock(html_url='https://foo.com/test_repo_3', title='Pull Request 789', number=789)
+        git_util = MagicMock()
+        git_util.get_file_diffs_from_last_commit.return_value = [
+            FileDiff(file_name='terraform/env/dev/dev-a.tfvars', unified_diff=[
+                '--- \n',
+                '+++ \n',
+                '@@ -1,2 +1,2 @@\n',
+                '-test_repo_1 = "123.foo.com/test-repo-1:abc123"',
+                '+test_repo_1 = "123.foo.com/test-repo-1:abc456"',
+                '-test_repo_2 = "123.foo.com/bar/test-repo-2:def123"',
+                '+test_repo_2 = "123.foo.com/bar/test-repo-2:def456"'
+                '-foo         = "bar1"',
+                '+foo         = "bar2"'
+            ]),
+            FileDiff(file_name='terraform/env/dev/dev-b.tfvars', unified_diff=[
+                '--- \n',
+                '+++ \n',
+                '@@ -1,2 +1,2 @@\n',
+                '-test_repo_3 = "123.foo.com/test-repo-3:ghi123"',
+                '+test_repo_3 = "123.foo.com/test-repo-3:ghi456"',
+            ])
         ]
 
-        github_session = MagicMock()
-        org = MagicMock()
-        github_session.get_organization.return_value = org
-        org.get_repo.side_effect = [test_repo_1, test_repo_2, test_repo_3]
+        slack_notifier = MagicMock()
+        github_util = MagicMock()
+        github_util.get_pull_requests_for_commit.side_effect = [
+            [PullRequest(url='https://foo.com/test_repo_1', title='Pull Request 123', number=123)],
+            [PullRequest(url='https://foo.com/test_repo_2', title='Pull Request 456', number=456)],
+            [PullRequest(url='https://foo.com/test_repo_3', title='Pull Request 789', number=789)]
+        ]
 
-        # Prepare webhook client
-        webhook_client = MagicMock()
-        webhook_client.send.return_value = MagicMock(status_code=200, body='ok')
-
-        file_pattern = '.*dev.*.tfvars'
-
-        main.main(repo=repo,
-                  slack_notifier=SlackNotifier('https://example.com', webhook_client),
-                  github_util=GitHubUtil(access_token='test', organization_name='test-org',
-                                         github_session=github_session),
+        main.main(git_util=git_util,
+                  slack_notifier=slack_notifier,
+                  github_util=github_util,
                   environment_name='Dev',
-                  file_pattern=file_pattern)
+                  file_pattern='.*dev.*.tfvars')
 
-        webhook_client.send.assert_called_once()
+        slack_notifier.send_markdown.assert_called_once()
 
         with Path('test_expected_message.txt').open() as f:
             expected_slack_message = f.read()
-        self.assertEquals(expected_slack_message, webhook_client.send.call_args[1]['blocks'][0]['text']['text'])
+        self.assertEquals(expected_slack_message, slack_notifier.send_markdown.call_args[0][0])
 
     def test_parse_repo_name(self: Self) -> None:
         """
@@ -127,28 +110,6 @@ class TestMain(unittest.TestCase):
         self.assertIsNone(main.parse_commit('name_suffix : "read_only"'))
         self.assertIsNone(main.parse_commit('LOCATIONS = "classpath:flyway/migrations,classpath:flyway/foo/bar"'))
         self.assertIsNone(main.parse_commit('  JAVA_OPTS = "--add-opens -javaagent:/opt/foo/foo.jar"'))
-
-    def test_get_changes_from_last_commit(self: Self) -> None:
-        """
-        A diff of changes should be returned from the most recent commit.
-
-        :return:
-        """
-        repo = MagicMock()
-
-        file1 = MagicMock()
-        file1.b_path = 'foo/bar1.txt'
-        file1.b_blob.data_stream.read.return_value = b'test_repo_1 = "123.foo.com/test-repo-1:abc123"'
-        file1.a_blob.data_stream.read.return_value = b'test_repo_1 = "123.foo.com/test-repo-1:abc456"'
-
-        file2 = MagicMock()
-        file2.b_path = 'foo/bar2.txt'
-        file2.b_blob.data_stream.read.return_value = b'test_repo_2 = "123.foo.com/test-repo-2:abc123"'
-        file2.a_blob.data_stream.read.return_value = b'test_repo_2 = "123.foo.com/test-repo-2:abc456"'
-
-        repo.head.commit.diff.return_value = [file1, file2]
-        changes = main.get_changes_from_last_commit(repo, '.*bar.*.txt')
-        self.assertEqual({'test-repo-1': 'abc456', 'test-repo-2': 'abc456'}, changes)
 
     def test_matches_file_pattern(self: Self) -> None:
         """

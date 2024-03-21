@@ -1,12 +1,10 @@
 """Parses the most recent commit for changes to variables."""
-import difflib
 import logging
 import os
 import re
-from typing import Optional, Dict
+from typing import Optional, Dict, Iterator
 
-from git import Repo
-
+from git_util.git_util import GitUtil
 from github_util.github_util import GitHubUtil
 from message_formatter.message_formatter import MessageFormatter
 from slack_notifier.slack_notifier import SlackNotifier
@@ -18,46 +16,25 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def main(repo: Repo, slack_notifier: SlackNotifier, github_util: GitHubUtil,
+def main(git_util: GitUtil, slack_notifier: SlackNotifier, github_util: GitHubUtil,
          environment_name: str, file_pattern: str) -> None:
     """
     Handle the main execution of the script.
 
     :return: None
     """
-    changes = get_changes_from_last_commit(repo, file_pattern)
-    if not changes:
+    file_diffs = git_util.get_file_diffs_from_last_commit(file_pattern)
+    if not file_diffs:
         return
 
     message_formatter = MessageFormatter(environment_name)
 
-    for repo_name, commit in changes.items():
-        message_formatter.add_repo_pull_request_summary(
-            repo_name=repo_name, pull_requests=github_util.get_pull_requests_for_commit(repo_name, commit)
-        )
+    for file_diff in file_diffs:
+        for repo_name, commit in get_repo_commit_changes(file_diff.unified_diff).items():
+            pull_requests = github_util.get_pull_requests_for_commit(repo_name, commit)
+            message_formatter.add_repo_pull_request_summary(repo_name=repo_name, pull_requests=pull_requests)
 
     slack_notifier.send_markdown(message_formatter.get_summary())
-
-
-def get_changes_from_last_commit(repo: Repo, file_pattern: str) -> Dict[str, str]:
-    """
-    Get a diff of changes from the most recent commit.
-
-    :param repo: git repository
-    :return: list of changes
-    """
-    changes: Dict[str, str] = {}
-
-    for item in repo.head.commit.diff('HEAD~1', create_patch=True):
-        logger.info(f'changed file: {item.b_path}')
-        if not matches_file_pattern(item.b_path, file_pattern):
-            logger.info(f'skipping file: {item.b_path}')
-            continue
-
-        changes.update(get_repo_commit_changes(item.b_blob.data_stream.read().decode('utf-8'),
-                                               item.a_blob.data_stream.read().decode('utf-8')))
-
-    return changes
 
 
 def matches_file_pattern(file_path: str, pattern: str) -> bool:
@@ -72,17 +49,16 @@ def matches_file_pattern(file_path: str, pattern: str) -> bool:
     return match is not None
 
 
-def get_repo_commit_changes(before: str, after: str) -> Dict[str, str]:
+def get_repo_commit_changes(unified_diff: Iterator[str]) -> Dict[str, str]:
     """
     Compare the before and after strings and return a list of changes.
 
-    :param before: string before changes
-    :param after: string after changes
+    :param unified_diff: unified diff string
     :return: list of changes
     """
     changes: Dict[str, str] = {}
 
-    for line in difflib.unified_diff(before.splitlines(), after.splitlines()):
+    for line in unified_diff:
         if not line.startswith('+'):
             continue
 
@@ -128,7 +104,7 @@ def parse_commit(line: str) -> Optional[str]:
 
 
 if __name__ == '__main__':
-    main(repo=Repo(),
+    main(git_util=GitUtil(),
          slack_notifier=SlackNotifier(webhook_url=os.getenv('SLACK_WEBHOOK')),
          github_util=GitHubUtil(access_token=os.getenv('TOKEN'), organization_name=os.getenv('ORGANIZATION')),
          environment_name=os.getenv('ENVIRONMENT'),
