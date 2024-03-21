@@ -8,7 +8,8 @@ from typing import Optional, Dict
 from git import Repo
 from github import Github, Auth, UnknownObjectException
 from github.Organization import Organization
-from slack_sdk import WebhookClient
+
+from slack_notifier.slack_notifier import SlackNotifier
 
 logging.basicConfig(
     format='%(asctime)s [%(levelname)8s] %(message)s (%(filename)s:%(lineno)s)',
@@ -17,7 +18,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def main(repo: Repo, webhook_client: WebhookClient, github_session: Github,
+def main(repo: Repo, slack_notifier: SlackNotifier, github_session: Github,
          github_organization: str, environment_name: str, file_pattern: str) -> None:
     """
     Handle the main execution of the script.
@@ -35,32 +36,7 @@ def main(repo: Repo, webhook_client: WebhookClient, github_session: Github,
         summary += get_pull_request_summary_from_commit(org, repo_name, commit)
         summary += '\n\n'
 
-    send_slack(webhook_client, summary)
-
-
-def send_slack(webhook_client: WebhookClient, message: str) -> None:
-    """
-    Send a message to Slack.
-
-    :param webhook_client: Slack webhook client
-    :param message: message to send
-    :return: None
-    """
-    logger.info('sending message to Slack')
-    response = webhook_client.send(
-        text='fallback',
-        blocks=[
-            {
-                'type': 'section',
-                'text': {
-                    'type': 'mrkdwn',
-                    'text': message
-                }
-            }
-        ]
-    )
-    assert response.status_code == 200
-    assert response.body == 'ok'
+    slack_notifier.send_markdown(summary)
 
 
 def get_pull_request_summary_from_commit(org: Organization, repo_name: str, commit: str) -> str:
@@ -179,7 +155,7 @@ def parse_commit(line: str) -> Optional[str]:
 
 if __name__ == '__main__':
     main(repo=Repo(),
-         webhook_client=WebhookClient(os.getenv('SLACK_WEBHOOK')),
+         slack_notifier=SlackNotifier(webhook_url=os.getenv('SLACK_WEBHOOK')),
          github_session=Github(auth=Auth.Token(os.getenv('TOKEN'))),
          github_organization=os.getenv('ORGANIZATION'),
          environment_name=os.getenv('ENVIRONMENT'),

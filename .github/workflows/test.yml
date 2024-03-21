@@ -20,8 +20,3 @@ jobs:
         if: ${{ always() }}
       - run: make check-coverage
         if: ${{ always() }}
-      - uses: ./
-        if: ${{ always() }}
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          organization: champ-oss

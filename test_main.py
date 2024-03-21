@@ -6,6 +6,7 @@ from unittest.mock import MagicMock
 from typing_extensions import Self
 
 import main
+from slack_notifier.slack_notifier import SlackNotifier
 
 
 class TestMain(unittest.TestCase):
@@ -79,7 +80,12 @@ class TestMain(unittest.TestCase):
 
         file_pattern = '.*dev.*.tfvars'
 
-        main.main(repo, webhook_client, github_session, 'test', 'Dev', file_pattern)
+        main.main(repo=repo,
+                  slack_notifier=SlackNotifier('https://example.com', webhook_client),
+                  github_session=github_session,
+                  github_organization='test',
+                  environment_name='Dev',
+                  file_pattern=file_pattern)
 
         webhook_client.send.assert_called_once()
 
