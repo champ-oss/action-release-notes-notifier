@@ -1,17 +1,17 @@
 name: 'action-release-notes-notifier'
-description: Parses the most recent commit for changes to variables.
+description: A GitHub Action which sends notifications to Slack with the release notes of new releases.
 inputs:
   environment:
-    description: 'Name of environment'
+    description: 'Name of the environment'
     required: true
   file-pattern:
-    description: 'Pattern to match files'
+    description: 'Regex pattern to filter files'
     required: true
   organization:
     description: 'GitHub organization name'
     required: true
   slack-webhook:
-    description: 'Slack Webhook URL'
+    description: 'Slack webhook URL to send notifications'
     required: true
   token:
     description: 'GitHub Token or PAT'

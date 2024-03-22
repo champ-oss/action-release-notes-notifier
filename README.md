@@ -62,5 +62,5 @@ jobs:
 | file-pattern  | true     | Regex pattern to filter files           |
 | organization  | true     | GitHub organization name                |
 | slack-webhook | true     | Slack webhook URL to send notifications |
-| token         | false    | GitHub token                            |
+| token         | false    | GitHub Token or PAT                     |
 
