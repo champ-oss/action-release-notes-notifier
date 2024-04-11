@@ -96,4 +96,7 @@ class GitHubUtil:
         if not repo:
             return
 
-        repo.create_git_ref(f'refs/tags/{tag}', commit)
+        try:
+            repo.get_git_ref(f'refs/tags/{tag}').edit(commit)
+        except UnknownObjectException:
+            repo.create_git_ref(f'refs/tags/{tag}', commit)
