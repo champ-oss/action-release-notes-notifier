@@ -97,6 +97,6 @@ class GitHubUtil:
             return
 
         try:
-            repo.get_git_ref(f'refs/tags/{tag}').edit(commit)
+            repo.get_git_ref(f'tags/{tag}').edit(commit)
         except UnknownObjectException:
             repo.create_git_ref(f'refs/tags/{tag}', commit)
