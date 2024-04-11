@@ -96,5 +96,4 @@ class GitHubUtil:
         if not repo:
             return
 
-        repo.create_git_tag(tag=tag, message=tag, object=commit, type='commit')
         repo.create_git_ref(f'refs/tags/{tag}', commit)
