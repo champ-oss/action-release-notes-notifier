@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 def main(git_util: GitUtil, slack_notifier: SlackNotifier, github_util: GitHubUtil,
-         environment_name: str, file_pattern: str) -> None:
+         environment_name: str, file_pattern: str, tag_name: str) -> None:
     """
     Handle the main execution of the script.
 
@@ -32,6 +32,8 @@ def main(git_util: GitUtil, slack_notifier: SlackNotifier, github_util: GitHubUt
         for repo_name, commit in DiffParser.get_repo_commit_changes(file_diff.unified_diff).items():
             pull_requests = github_util.get_pull_requests_for_commit(repo_name, commit)
             message_formatter.add_repo_pull_request_summary(repo_name=repo_name, pull_requests=pull_requests)
+            if tag_name:
+                github_util.tag_commit(repo_name, commit, tag_name)
 
     slack_notifier.send_markdown(message_formatter.get_final_summary())
 
@@ -41,4 +43,5 @@ if __name__ == '__main__':
          slack_notifier=SlackNotifier(webhook_url=os.getenv('SLACK_WEBHOOK')),
          github_util=GitHubUtil(access_token=os.getenv('TOKEN'), organization_name=os.getenv('ORGANIZATION')),
          environment_name=os.getenv('ENVIRONMENT'),
-         file_pattern=os.getenv('FILE_PATTERN'))
+         file_pattern=os.getenv('FILE_PATTERN'),
+         tag_name=os.getenv('TAG_NAME'))

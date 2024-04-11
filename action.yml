@@ -13,6 +13,10 @@ inputs:
   slack-webhook:
     description: 'Slack webhook URL to send notifications'
     required: true
+  tag-name:
+    description: 'Tag to add to the source repositories'
+    required: false
+    default: ''
   token:
     description: 'GitHub Token or PAT'
     default: ${{ github.token }}
@@ -39,3 +43,4 @@ runs:
         ORGANIZATION: ${{ inputs.organization }}
         SLACK_WEBHOOK: ${{ inputs.slack-webhook }}
         TOKEN: ${{ inputs.token }}
+        TAG_NAME: ${{ inputs.tag-name }}

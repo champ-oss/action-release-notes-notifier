@@ -10,6 +10,7 @@ A GitHub Action which sends notifications to Slack with the release notes of new
 - Scans the most recent commit to find lines that contain a repository and commit that have been updated.
 - Gathers information for pull requests related to any changed repositories and commits.
 - Files to scan can be filtered using a regex pattern.
+- Optionally creates a tag in the source repositories.
 
 ## Example of Slack notification
 
@@ -49,6 +50,7 @@ jobs:
         with:
           environment: Dev
           file-pattern: .*dev.*.tfvars
+          tag-name: dev
           token: ${{ secrets.GITHUB_TOKEN }}
           organization: champ-oss
           slack-webhook: https://example.com/slack-webhook
@@ -62,5 +64,6 @@ jobs:
 | file-pattern  | true     | Regex pattern to filter files           |
 | organization  | true     | GitHub organization name                |
 | slack-webhook | true     | Slack webhook URL to send notifications |
+| tag-name      | false    | Tag to add to the source repositories   |
 | token         | false    | GitHub Token or PAT                     |
 

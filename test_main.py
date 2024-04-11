@@ -59,7 +59,8 @@ class TestMain(unittest.TestCase):
                   slack_notifier=slack_notifier,
                   github_util=github_util,
                   environment_name='Dev',
-                  file_pattern='.*dev.*.tfvars')
+                  file_pattern='.*dev.*.tfvars',
+                  tag_name='test-tag')
 
         expected_slack_message = (
             'The Dev environment has been updated\n'
@@ -97,6 +98,7 @@ class TestMain(unittest.TestCase):
                   slack_notifier=slack_notifier,
                   github_util=MagicMock(),
                   environment_name='Dev',
-                  file_pattern='.*dev.*.tfvars')
+                  file_pattern='.*dev.*.tfvars',
+                  tag_name='test-tag')
 
         self.assertIsNone(slack_notifier.send_markdown.call_args[0][0])
