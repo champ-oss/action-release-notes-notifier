@@ -82,3 +82,21 @@ class GitHubUtil:
             logger.info(f'found pull request: {repo_name} - #{pr.number} {pr.title}')
             pull_requests.append(PullRequest(title=pr.title, number=pr.number, url=pr.html_url))
         return pull_requests
+
+    def tag_commit(self: Self, repo_name: str, commit: str, tag: str) -> None:
+        """
+        Tag a commit in a repository.
+
+        :param repo_name: name of the repository
+        :param commit: commit sha
+        :param tag: name of the tag to apply to the commit
+        """
+        logger.info(f'tagging commit:{commit} in repo:{repo_name} with tag:{tag}')
+        repo = self.get_repo(repo_name)
+        if not repo:
+            return
+
+        try:
+            repo.get_git_ref(f'tags/{tag}').edit(commit)
+        except UnknownObjectException:
+            repo.create_git_ref(f'refs/tags/{tag}', commit)

@@ -49,3 +49,18 @@ class TestGitHubUtil(unittest.TestCase):
             PullRequest(title='Pull Request 2', number=2, url='https://foo.com/2')
         ]
         self.assertEqual(expected, self.github_util.get_pull_requests_for_commit(repo_name='test-repo-1', commit='123'))
+
+    def test_tag_commit(self: Self) -> None:
+        """Validate the tag_commit function is successful."""
+        self.assertIsNone(self.github_util.tag_commit(repo_name='test-repo-1', commit='123', tag='test-tag'))
+
+    def test_tag_commit_with_repo_not_found(self: Self) -> None:
+        """Validate the tag_commit function handles a repository not found."""
+        self.github_session.get_organization.return_value.get_repo.return_value = None
+        self.assertIsNone(self.github_util.tag_commit(repo_name='test-repo-1', commit='123', tag='test-tag'))
+
+    def test_tag_commit_with_ref_not_found(self: Self) -> None:
+        """Validate the tag_commit function handles a ref not found."""
+        self.github_session.get_organization.return_value. \
+            get_repo.return_value.get_git_ref.side_effect = UnknownObjectException(400)
+        self.assertIsNone(self.github_util.tag_commit(repo_name='test-repo-1', commit='123', tag='test-tag'))
