@@ -2,7 +2,7 @@
 import logging
 from typing import Optional
 
-from github import Github, Auth, UnknownObjectException
+from github import Github, Auth, UnknownObjectException, GithubException
 from github.Commit import Commit
 from github.Repository import Repository
 from typing_extensions import Self
@@ -26,7 +26,7 @@ class GitHubUtil:
         """
         try:
             return repo.get_commit(commit)
-        except UnknownObjectException as e:
+        except (UnknownObjectException, GithubException) as e:
             logger.warning(f'unable to find repo commit: {repo}:{commit} error:{e}')
             return None
 
@@ -56,7 +56,7 @@ class GitHubUtil:
         """
         try:
             return self.organization.get_repo(repo_name)
-        except UnknownObjectException as e:
+        except (UnknownObjectException, GithubException) as e:
             logger.warning(f'unable to find repository: {repo_name} error:{e}')
             return None
 
@@ -98,5 +98,5 @@ class GitHubUtil:
 
         try:
             repo.get_git_ref(f'tags/{tag}').edit(commit)
-        except UnknownObjectException:
+        except (UnknownObjectException, GithubException):
             repo.create_git_ref(f'refs/tags/{tag}', commit)
