@@ -40,3 +40,13 @@ class TestSlackNotifier(unittest.TestCase):
         slack_notifier.send_markdown(None)
         slack_notifier.send_markdown('')
         webhook_client.send.assert_not_called()
+
+    def test_send_markdown_when_message_too_long(self: Self) -> None:
+        """The send_markdown function should throw an exception if the message is too long."""
+        webhook_client = MagicMock()
+        slack_notifier = SlackNotifier('https://example.com', webhook_client)
+
+        with self.assertRaises(ValueError):
+            slack_notifier.send_markdown('x' * 3001)
+
+        slack_notifier.send_markdown('x' * 3000)  # should pass
