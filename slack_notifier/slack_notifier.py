@@ -33,6 +33,10 @@ class SlackNotifier:
             logger.info('not sending Slack message because message is empty')
             return
 
+        if len(message) > 3000:
+            logger.error('message is greater than the Slack limit of 3000 characters')
+            raise ValueError()
+
         logger.info('sending message to Slack')
         response = self._webhook_client.send(
             text='fallback',
