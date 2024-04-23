@@ -82,3 +82,12 @@ class TestGitHubUtil(unittest.TestCase):
         self.github_session.get_organization.return_value. \
             get_repo.return_value.get_git_ref.side_effect = GithubException(status=422, message='Not found')
         self.assertIsNone(self.github_util.tag_commit(repo_name='test-repo-1', commit='123', tag='test-tag'))
+
+    def test_tag_commit_with_create_git_ref_not_found(self: Self) -> None:
+        """Validate the tag_commit function handles a ref not found."""
+        self.github_session.get_organization.return_value. \
+            get_repo.return_value.get_git_ref.side_effect = UnknownObjectException(400)
+
+        self.github_session.get_organization.return_value. \
+            get_repo.return_value.create_git_ref.side_effect = UnknownObjectException(400)
+        self.assertIsNone(self.github_util.tag_commit(repo_name='test-repo-1', commit='123', tag='test-tag'))
