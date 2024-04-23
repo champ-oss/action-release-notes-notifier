@@ -96,7 +96,39 @@ class GitHubUtil:
         if not repo:
             return
 
+        if not self._update_git_tag(repo, commit, tag):
+            self._create_git_tag(repo, commit, tag)
+
+    @staticmethod
+    def _update_git_tag(repo: Repository, commit: str, tag: str) -> bool:
+        """
+        Update a git tag in the repo if the tag already exists.
+
+        :param repo: GitHub Repository
+        :param commit: commit sha
+        :param tag: name of the tag to update
+        :return: true or false if the tag was updated successfully
+        """
         try:
             repo.get_git_ref(f'tags/{tag}').edit(commit)
-        except (UnknownObjectException, GithubException):
+        except (UnknownObjectException, GithubException) as e:
+            logger.debug(f'get_git_ref failed: {repo.name}:{commit} error:{e}')
+            return False
+        return True
+
+    @staticmethod
+    def _create_git_tag(repo: Repository, commit: str, tag: str) -> bool:
+        """
+        Create a git tag in the repo.
+
+        :param repo: GitHub Repository
+        :param commit: commit sha
+        :param tag: name of the tag to create
+        :return: true or false if the tag was created successfully
+        """
+        try:
             repo.create_git_ref(f'refs/tags/{tag}', commit)
+        except (UnknownObjectException, GithubException) as e:
+            logger.warning(f'unable to create git ref: {repo.name}:{commit} error:{e}')
+            return False
+        return True
