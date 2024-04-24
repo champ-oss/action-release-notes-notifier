@@ -23,7 +23,7 @@ class SlackNotifier:
         else:
             self._webhook_client = webhook_client
 
-    def add_message_block(self, message: str, at_beginning: bool = False) -> None:
+    def add_message_block(self: Self, message: str, at_beginning: bool = False) -> None:
         """
         Add a message block to be sent to Slack.
 

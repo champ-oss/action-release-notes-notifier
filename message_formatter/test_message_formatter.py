@@ -11,6 +11,7 @@ class TestMessageFormatter(unittest.TestCase):
     """Provides tests for the message formatter."""
 
     def test_get_repo_pull_request_summary(self: Self) -> None:
+        """The pull request summary should be formatted correctly."""
         summary = MessageFormatter.get_repo_pull_request_summary('repo1', [
             PullRequest(title='Pull Request 1', number=1, url='http://example.com/pr1'),
             PullRequest(title='Pull Request 2', number=2, url='http://example.com/pr2'),

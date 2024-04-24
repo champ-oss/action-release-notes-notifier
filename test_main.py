@@ -80,31 +80,31 @@ class TestMain(unittest.TestCase):
                     'type': 'section',
                     'text': {
                         'type': 'mrkdwn',
-                        'text': (
+                        'text':
                             'test-repo-1'
                             '\n \t • *<https://foo.com/test_repo_1|Pull Request 123a>* #123'
                             '\n \t • *<https://foo.com/test_repo_1|Pull Request 123b>* #124'
-                        )
+
                     }
                 },
                 {
                     'type': 'section',
                     'text': {
                         'type': 'mrkdwn',
-                        'text': (
+                        'text':
                             'test-repo-2'
                             '\n \t • *<https://foo.com/test_repo_2|Pull Request 456>* #456'
-                        )
+
                     }
                 },
                 {
                     'type': 'section',
                     'text': {
                         'type': 'mrkdwn',
-                        'text': (
+                        'text':
                             'test-repo-3'
                             '\n \t • *<https://foo.com/test_repo_3|Pull Request 789>* #789'
-                        )
+
                     }
                 },
             ]
