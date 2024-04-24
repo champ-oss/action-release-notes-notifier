@@ -7,6 +7,7 @@ from typing_extensions import Self
 import main
 from git_util.file_diff import FileDiff
 from github_util.pull_request import PullRequest
+from slack_notifier.slack_notifier import SlackNotifier
 
 
 class TestMain(unittest.TestCase):
@@ -40,7 +41,6 @@ class TestMain(unittest.TestCase):
             ])
         ]
 
-        slack_notifier = MagicMock()
         github_util = MagicMock()
         github_util.get_pull_requests_for_commit.side_effect = [
             [
@@ -55,30 +55,60 @@ class TestMain(unittest.TestCase):
             ]
         ]
 
+        slack_client = MagicMock()
+        slack_client.send.return_value.status_code = 200
+        slack_client.send.return_value.body = 'ok'
+
         main.main(git_util=git_util,
-                  slack_notifier=slack_notifier,
+                  slack_notifier=SlackNotifier('', slack_client),
                   github_util=github_util,
                   environment_name='Dev',
                   file_pattern='.*dev.*.tfvars',
                   tag_name='test-tag')
 
-        expected_slack_message = (
-            'The Dev environment has been updated\n'
-            '\n'
-            'test-repo-1\n'
-            ' \t • *<https://foo.com/test_repo_1|Pull Request 123a>* #123\n'
-            ' \t • *<https://foo.com/test_repo_1|Pull Request 123b>* #124\n'
-            '\n'
-            '\n'
-            'test-repo-2\n'
-            ' \t • *<https://foo.com/test_repo_2|Pull Request 456>* #456\n'
-            '\n'
-            '\n'
-            'test-repo-3\n'
-            ' \t • *<https://foo.com/test_repo_3|Pull Request 789>* #789\n'
-            '\n'
+        slack_client.send.assert_called_with(
+            text='fallback',
+            blocks=[
+                {
+                    'type': 'section',
+                    'text': {
+                        'type': 'mrkdwn',
+                        'text': 'The Dev environment has been updated'
+                    }
+                },
+                {
+                    'type': 'section',
+                    'text': {
+                        'type': 'mrkdwn',
+                        'text':
+                            'test-repo-1'
+                            '\n \t • *<https://foo.com/test_repo_1|Pull Request 123a>* #123'
+                            '\n \t • *<https://foo.com/test_repo_1|Pull Request 123b>* #124'
+
+                    }
+                },
+                {
+                    'type': 'section',
+                    'text': {
+                        'type': 'mrkdwn',
+                        'text':
+                            'test-repo-2'
+                            '\n \t • *<https://foo.com/test_repo_2|Pull Request 456>* #456'
+
+                    }
+                },
+                {
+                    'type': 'section',
+                    'text': {
+                        'type': 'mrkdwn',
+                        'text':
+                            'test-repo-3'
+                            '\n \t • *<https://foo.com/test_repo_3|Pull Request 789>* #789'
+
+                    }
+                },
+            ]
         )
-        self.assertEqual(expected_slack_message, slack_notifier.send_markdown.call_args[0][0])
 
     def test_main_slack_message_should_be_none_when_summary_is_empty(self: Self) -> None:
         """The Slack message should be None e when no repo information is added to the summary."""
@@ -93,7 +123,9 @@ class TestMain(unittest.TestCase):
             ])
         ]
 
-        slack_notifier = MagicMock()
+        slack_client = MagicMock()
+        slack_notifier = SlackNotifier('', slack_client)
+
         main.main(git_util=git_util,
                   slack_notifier=slack_notifier,
                   github_util=MagicMock(),
@@ -101,4 +133,5 @@ class TestMain(unittest.TestCase):
                   file_pattern='.*dev.*.tfvars',
                   tag_name='test-tag')
 
-        self.assertIsNone(slack_notifier.send_markdown.call_args[0][0])
+        self.assertFalse(slack_notifier.has_messages())
+        slack_client.send.assert_not_called()

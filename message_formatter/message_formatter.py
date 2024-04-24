@@ -1,24 +1,22 @@
 """Provides functionality for formatting the notification message."""
-from typing import Optional
-
-from typing_extensions import Self
-
 from github_util.pull_request import PullRequest
 
 
 class MessageFormatter:
     """Provides functionality for formatting the notification message."""
 
-    def __init__(self: Self, environment_name: str) -> None:
+    @staticmethod
+    def get_message_header(environment_name: str) -> str:
         """
-        Initialize the message formatter.
+        Get the header for the message.
 
-        :param environment_name: Name of the environment.
+        :param environment_name: Name of the environment being updated
+        :return:
         """
-        self._environment_name = environment_name
-        self._summary = ''
+        return f'The {environment_name} environment has been updated'
 
-    def add_repo_pull_request_summary(self: Self, repo_name: str, pull_requests: list[PullRequest]) -> None:
+    @staticmethod
+    def get_repo_pull_request_summary(repo_name: str, pull_requests: list[PullRequest]) -> str:
         """
         Add a summary of each pull request for the repository to the summary.
 
@@ -26,17 +24,7 @@ class MessageFormatter:
         :param pull_requests: List of pull request information
         :return:
         """
-        self._summary += f'\n{repo_name}'
+        summary = repo_name
         for pull_request in pull_requests:
-            self._summary += f'\n \t • *<{pull_request.url}|{pull_request.title}>* #{pull_request.number}'
-        self._summary += '\n\n'
-
-    def get_final_summary(self: Self) -> Optional[str]:
-        """
-        Get the final overall summary message. If no information has been added, return None.
-
-        :return:
-        """
-        if self._summary:
-            return f'The {self._environment_name} environment has been updated\n' + self._summary
-        return None
+            summary += f'\n \t • *<{pull_request.url}|{pull_request.title}>* #{pull_request.number}'
+        return summary

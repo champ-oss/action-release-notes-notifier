@@ -26,16 +26,19 @@ def main(git_util: GitUtil, slack_notifier: SlackNotifier, github_util: GitHubUt
     if not file_diffs:
         return
 
-    message_formatter = MessageFormatter(environment_name)
-
     for file_diff in file_diffs:
         for repo_name, commit in DiffParser.get_repo_commit_changes(file_diff.unified_diff).items():
             pull_requests = github_util.get_pull_requests_for_commit(repo_name, commit)
-            message_formatter.add_repo_pull_request_summary(repo_name=repo_name, pull_requests=pull_requests)
+
+            summary = MessageFormatter.get_repo_pull_request_summary(repo_name=repo_name, pull_requests=pull_requests)
+            slack_notifier.add_message_block(summary)
+
             if tag_name:
                 github_util.tag_commit(repo_name, commit, tag_name)
 
-    slack_notifier.send_markdown(message_formatter.get_final_summary())
+    if slack_notifier.has_messages():
+        slack_notifier.add_message_block(MessageFormatter.get_message_header(environment_name), at_beginning=True)
+        slack_notifier.send_message()
 
 
 if __name__ == '__main__':
