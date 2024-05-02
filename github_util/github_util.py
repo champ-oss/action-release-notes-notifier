@@ -99,9 +99,9 @@ class GitHubUtil:
         if not self._update_git_tag(repo, commit, tag):
             self._create_git_tag(repo, commit, tag)
 
-    def compare_and_get_commits_hashes(self: Self, repo_name: str, base: str, head: str) -> list[str] | None:
+    def compare_and_get_merge_commit_hashes(self: Self, repo_name: str, base: str, head: str) -> list[str] | None:
         """
-        Compare two git refs and get a list of commit hashes between them.
+        Compare two git refs and get a list of merge commit hashes between them.
 
         :param repo_name: name of the repository
         :param base: base ref to compare from
@@ -114,8 +114,8 @@ class GitHubUtil:
             return None
 
         comparison = repo.compare(base, head)
-        commits = [commit.sha for commit in comparison.commits]
-        logger.info(f'found {len(commits)} commits between {base} and {head} in {repo_name}')
+        commits = [commit.sha for commit in comparison.commits if len(commit.parents) > 1]
+        logger.info(f'found {len(commits)} merge commits between {base} and {head} in {repo_name}')
         return commits
 
     @staticmethod

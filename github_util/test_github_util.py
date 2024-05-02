@@ -95,9 +95,9 @@ class TestGitHubUtil(unittest.TestCase):
     def test_compare_and_get_commits_hashes(self: Self) -> None:
         """Validate the compare_and_get_commits_hashes function is successful."""
         self.github_session.get_organization.return_value.get_repo.return_value.compare.return_value.commits = [
-            MagicMock(sha='123'),
+            MagicMock(sha='123', parents=[1, 1]),
             MagicMock(sha='456')
         ]
-        self.assertEqual(['123', '456'], self.github_util.compare_and_get_commits_hashes(
+        self.assertEqual(['123'], self.github_util.compare_and_get_merge_commit_hashes(
             repo_name='test-repo-1', base='main', head='feature-1'
         ))
