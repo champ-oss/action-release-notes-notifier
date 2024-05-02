@@ -30,7 +30,7 @@ class DiffParser:
             new_commit = DiffParser._parse_commit(diff_list[i])
             old_commit = DiffParser._parse_commit(diff_list[i - 1])
             if repo and new_commit:
-                logger.info(f'found change: repo:{repo} old commit:{old_commit} new commit:{new_commit}')
+                logger.info(f'found change: repo:{repo} old-commit:{old_commit} new-commit:{new_commit}')
                 changes.append(RepoCommitChange(repository=repo, old_commit=old_commit, new_commit=new_commit))
 
         return changes

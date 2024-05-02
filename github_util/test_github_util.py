@@ -91,3 +91,13 @@ class TestGitHubUtil(unittest.TestCase):
         self.github_session.get_organization.return_value. \
             get_repo.return_value.create_git_ref.side_effect = UnknownObjectException(400)
         self.assertIsNone(self.github_util.tag_commit(repo_name='test-repo-1', commit='123', tag='test-tag'))
+
+    def test_compare_and_get_commits_hashes(self: Self) -> None:
+        """Validate the compare_and_get_commits_hashes function is successful."""
+        self.github_session.get_organization.return_value.get_repo.return_value.compare.return_value.commits = [
+            MagicMock(sha='123'),
+            MagicMock(sha='456')
+        ]
+        self.assertEqual(['123', '456'], self.github_util.compare_and_get_commits_hashes(
+            repo_name='test-repo-1', base='main', head='feature-1'
+        ))
