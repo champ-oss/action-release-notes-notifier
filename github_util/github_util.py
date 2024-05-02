@@ -118,7 +118,7 @@ class GitHubUtil:
             self._create_git_tag(repo, commit, tag)
 
     @staticmethod
-    def _compare_and_get_merge_commit_hashes(repo: Repository, base: str, head: str) -> list[str] | None:
+    def _compare_and_get_merge_commit_hashes(repo: Repository, base: str, head: str) -> list[str]:
         """
         Compare two git refs and get a list of merge commit hashes between them.
 
@@ -127,11 +127,17 @@ class GitHubUtil:
         :param head: head ref to compare to
         :return: list of git commit hashes
         """
+        if not base or not head:
+            return []
         logger.info(f'Comparing {base} and {head} for repo:{repo.name}')
-        comparison = repo.compare(base, head)
-        commits = [commit.sha for commit in comparison.commits if len(commit.parents) > 1]
-        logger.info(f'found {len(commits)} merge commits between {base} and {head} in {repo.name}')
-        return commits
+        try:
+            comparison = repo.compare(base, head)
+            commits = [commit.sha for commit in comparison.commits if len(commit.parents) > 1]
+            logger.info(f'found {len(commits)} merge commits between {base} and {head} in {repo.name}')
+            return commits
+        except (UnknownObjectException, GithubException) as e:
+            logger.debug(f'compare failed with error:{e}')
+        return []
 
     @staticmethod
     def _update_git_tag(repo: Repository, commit: str, tag: str) -> bool:
