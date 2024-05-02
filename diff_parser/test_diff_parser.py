@@ -21,8 +21,8 @@ def test_get_repo_commit_changes() -> None:
         ]
     )
     assert changes == [
-        RepoCommitChange(repository='test-repo-1', old_commit='', new_commit='abc456'),
-        RepoCommitChange(repository='test-repo-2', old_commit='', new_commit='def456')
+        RepoCommitChange(repository='test-repo-1', old_commit='abc123', new_commit='abc456'),
+        RepoCommitChange(repository='test-repo-2', old_commit='def123', new_commit='def456')
     ]
 
 

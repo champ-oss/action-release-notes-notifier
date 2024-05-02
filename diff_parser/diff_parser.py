@@ -19,7 +19,7 @@ class DiffParser:
         :param unified_diff: unified diff string
         :return: list of changes
         """
-        changes = []
+        changes: List[RepoCommitChange] = []
         diff_list = list(unified_diff)
 
         for i in range(len(diff_list)):
@@ -27,10 +27,11 @@ class DiffParser:
                 continue
 
             repo = DiffParser._parse_repo_name(diff_list[i])
-            commit = DiffParser._parse_commit(diff_list[i])
-            if repo and commit:
-                logger.info(f'found change: repo:{repo} commit:{commit}')
-                changes.append(RepoCommitChange(repository=repo, old_commit='', new_commit=commit))
+            new_commit = DiffParser._parse_commit(diff_list[i])
+            old_commit = DiffParser._parse_commit(diff_list[i - 1])
+            if repo and new_commit:
+                logger.info(f'found change: repo:{repo} old commit:{old_commit} new commit:{new_commit}')
+                changes.append(RepoCommitChange(repository=repo, old_commit=old_commit, new_commit=new_commit))
 
         return changes
 
