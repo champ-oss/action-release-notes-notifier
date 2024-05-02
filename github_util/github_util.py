@@ -114,7 +114,9 @@ class GitHubUtil:
             return None
 
         comparison = repo.compare(base, head)
-        return [commit.sha for commit in comparison.commits]
+        commits = [commit.sha for commit in comparison.commits]
+        logger.info(f'found {len(commits)} commits between {base} and {head} in {repo_name}')
+        return commits
 
     @staticmethod
     def _update_git_tag(repo: Repository, commit: str, tag: str) -> bool:

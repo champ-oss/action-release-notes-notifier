@@ -27,22 +27,19 @@ def main(git_util: GitUtil, slack_notifier: SlackNotifier, github_util: GitHubUt
         return
 
     for file_diff in file_diffs:
-        for repo_commit_change in DiffParser.get_repo_commit_changes(file_diff.unified_diff):
-            commits = github_util.compare_and_get_commits_hashes(
-                repo_commit_change.repository, repo_commit_change.old_commit, repo_commit_change.new_commit
-            )
-            logger.info(f'found {len(commits)} commits between {repo_commit_change.old_commit} '
-                        f'and {repo_commit_change.new_commit} in {repo_commit_change.repository}')
-
-            pull_requests = github_util.get_pull_requests_for_commit(repo_commit_change.repository,
-                                                                     repo_commit_change.new_commit)
-
-            summary = MessageFormatter.get_repo_pull_request_summary(repo_name=repo_commit_change.repository,
-                                                                     pull_requests=pull_requests)
-            slack_notifier.add_message_block(summary)
+        for change in DiffParser.get_repo_commit_changes(file_diff.unified_diff):
 
             if tag_name:
-                github_util.tag_commit(repo_commit_change.repository, repo_commit_change.new_commit, tag_name)
+                github_util.tag_commit(change.repository, change.new_commit, tag_name)
+
+            for commit in github_util.compare_and_get_commits_hashes(change.repository, change.old_commit,
+                                                                     change.new_commit):
+                pull_requests = github_util.get_pull_requests_for_commit(change.repository,
+                                                                         commit)
+
+                summary = MessageFormatter.get_repo_pull_request_summary(repo_name=change.repository,
+                                                                         pull_requests=pull_requests)
+                slack_notifier.add_message_block(summary)
 
     if slack_notifier.has_messages():
         slack_notifier.add_message_block(MessageFormatter.get_message_header(environment_name), at_beginning=True)
