@@ -28,6 +28,12 @@ def main(git_util: GitUtil, slack_notifier: SlackNotifier, github_util: GitHubUt
 
     for file_diff in file_diffs:
         for repo_commit_change in DiffParser.get_repo_commit_changes(file_diff.unified_diff):
+            commits = github_util.compare_and_get_commits_hashes(
+                repo_commit_change.repository, repo_commit_change.old_commit, repo_commit_change.new_commit
+            )
+            logger.info(f'found {len(commits)} commits between {repo_commit_change.old_commit} '
+                        f'and {repo_commit_change.new_commit} in {repo_commit_change.repository}')
+
             pull_requests = github_util.get_pull_requests_for_commit(repo_commit_change.repository,
                                                                      repo_commit_change.new_commit)
 
