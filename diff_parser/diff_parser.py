@@ -1,7 +1,9 @@
 """Provides functionality for parsing git diffs."""
 import logging
 import re
-from typing import Optional, Iterator, Dict
+from typing import Optional, Iterator, List
+
+from diff_parser.RepoCommitChange import RepoCommitChange
 
 logger = logging.getLogger(__name__)
 
@@ -10,24 +12,25 @@ class DiffParser:
     """Provides functionality for parsing git diffs."""
 
     @staticmethod
-    def get_repo_commit_changes(unified_diff: Iterator[str]) -> Dict[str, str]:
+    def get_repo_commit_changes(unified_diff: Iterator[str]) -> List[RepoCommitChange]:
         """
         Parse the diff string to get the repo and commit changes.
 
         :param unified_diff: unified diff string
         :return: list of changes
         """
-        changes: Dict[str, str] = {}
+        changes = []
+        diff_list = list(unified_diff)
 
-        for line in unified_diff:
-            if not line.startswith('+'):
+        for i in range(len(diff_list)):
+            if not diff_list[i].startswith('+'):
                 continue
 
-            repo = DiffParser._parse_repo_name(line)
-            commit = DiffParser._parse_commit(line)
+            repo = DiffParser._parse_repo_name(diff_list[i])
+            commit = DiffParser._parse_commit(diff_list[i])
             if repo and commit:
                 logger.info(f'found change: repo:{repo} commit:{commit}')
-                changes[repo] = commit
+                changes.append(RepoCommitChange(repository=repo, old_commit='', new_commit=commit))
 
         return changes
 

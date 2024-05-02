@@ -1,6 +1,7 @@
 """Provide tests for diff_parser."""
 import pytest
 
+from diff_parser.RepoCommitChange import RepoCommitChange
 from diff_parser.diff_parser import DiffParser
 
 
@@ -19,10 +20,10 @@ def test_get_repo_commit_changes() -> None:
             '+foo         = "bar2"'
         ]
     )
-    assert changes == {
-        'test-repo-1': 'abc456',
-        'test-repo-2': 'def456'
-    }
+    assert changes == [
+        RepoCommitChange(repository='test-repo-1', old_commit='', new_commit='abc456'),
+        RepoCommitChange(repository='test-repo-2', old_commit='', new_commit='def456')
+    ]
 
 
 @pytest.mark.parametrize('test_input,expected', [
