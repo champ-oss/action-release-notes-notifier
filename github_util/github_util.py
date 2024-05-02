@@ -60,26 +60,44 @@ class GitHubUtil:
             logger.warning(f'unable to find repository: {repo_name} error:{e}')
             return None
 
-    def get_pull_requests_for_commit(self: Self, repo_name: str, commit: str) -> list[PullRequest]:
+    def get_pull_requests_between_refs(self: Self, repo_name: str, base: str, head: str) -> list[PullRequest]:
         """
-        Get pull requests associated with a commit.
+        Compare two git refs and get a list of pull requests between them.
 
         :param repo_name: name of the repository
-        :param commit: commit to find pull requests for
+        :param base: base ref to compare from
+        :param head: head ref to compare to
         :return: list of pull requests
         """
-        logger.info(f'getting pull requests for commit:{commit} in repo:{repo_name}')
         repo = self.get_repo(repo_name)
         if not repo:
             return []
 
+        pull_requests: list[PullRequest] = []
+
+        for commit in self._compare_and_get_merge_commit_hashes(repo, base, head):
+            for pull_request in self._get_pull_requests_for_commit(repo, commit):
+                if pull_request not in pull_requests:
+                    pull_requests.append(pull_request)
+
+        return pull_requests
+
+    def _get_pull_requests_for_commit(self: Self, repo: Repository, commit: str) -> list[PullRequest]:
+        """
+        Get pull requests associated with a commit.
+
+        :param repo: GitHub repository
+        :param commit: commit to find pull requests for
+        :return: list of pull requests
+        """
+        logger.info(f'getting pull requests for commit:{commit} in repo:{repo.name}')
         commit = self.get_repo_commit(repo, commit)
         if not commit:
             return []
 
         pull_requests = []
         for pr in commit.get_pulls():
-            logger.info(f'found pull request: {repo_name} - #{pr.number} {pr.title}')
+            logger.info(f'found pull request: {repo.name} - #{pr.number} {pr.title}')
             pull_requests.append(PullRequest(title=pr.title, number=pr.number, url=pr.html_url))
         return pull_requests
 
@@ -99,23 +117,20 @@ class GitHubUtil:
         if not self._update_git_tag(repo, commit, tag):
             self._create_git_tag(repo, commit, tag)
 
-    def compare_and_get_merge_commit_hashes(self: Self, repo_name: str, base: str, head: str) -> list[str] | None:
+    @staticmethod
+    def _compare_and_get_merge_commit_hashes(repo: Repository, base: str, head: str) -> list[str] | None:
         """
         Compare two git refs and get a list of merge commit hashes between them.
 
-        :param repo_name: name of the repository
+        :param repo: GitHub repository
         :param base: base ref to compare from
         :param head: head ref to compare to
         :return: list of git commit hashes
         """
-        logger.info(f'Comparing {base} and {head} for repo:{repo_name}')
-        repo = self.get_repo(repo_name)
-        if not repo:
-            return None
-
+        logger.info(f'Comparing {base} and {head} for repo:{repo.name}')
         comparison = repo.compare(base, head)
         commits = [commit.sha for commit in comparison.commits if len(commit.parents) > 1]
-        logger.info(f'found {len(commits)} merge commits between {base} and {head} in {repo_name}')
+        logger.info(f'found {len(commits)} merge commits between {base} and {head} in {repo.name}')
         return commits
 
     @staticmethod

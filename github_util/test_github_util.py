@@ -52,7 +52,8 @@ class TestGitHubUtil(unittest.TestCase):
 
     def test_get_pull_requests_for_commit_with_success(self: Self) -> None:
         """Validate the get_pull_requests_for_commit function is successful."""
-        self.github_session.get_organization.return_value.get_repo.return_value.get_commit.return_value.get_pulls.return_value = [
+        mock_repo = MagicMock()
+        mock_repo.get_commit.return_value.get_pulls.return_value = [
             MagicMock(html_url='https://foo.com/1', title='Pull Request 1', number=1),
             MagicMock(html_url='https://foo.com/2', title='Pull Request 2', number=2)
         ]
@@ -60,7 +61,7 @@ class TestGitHubUtil(unittest.TestCase):
             PullRequest(title='Pull Request 1', number=1, url='https://foo.com/1'),
             PullRequest(title='Pull Request 2', number=2, url='https://foo.com/2')
         ]
-        self.assertEqual(expected, self.github_util.get_pull_requests_for_commit(repo_name='test-repo-1', commit='123'))
+        self.assertEqual(expected, self.github_util._get_pull_requests_for_commit(mock_repo, commit='123'))
 
     def test_tag_commit(self: Self) -> None:
         """Validate the tag_commit function is successful."""
@@ -94,10 +95,29 @@ class TestGitHubUtil(unittest.TestCase):
 
     def test_compare_and_get_commits_hashes(self: Self) -> None:
         """Validate the compare_and_get_commits_hashes function is successful."""
-        self.github_session.get_organization.return_value.get_repo.return_value.compare.return_value.commits = [
+        mock_repo = MagicMock()
+        mock_repo.compare.return_value.commits = [
             MagicMock(sha='123', parents=[1, 1]),
             MagicMock(sha='456')
         ]
-        self.assertEqual(['123'], self.github_util.compare_and_get_merge_commit_hashes(
-            repo_name='test-repo-1', base='main', head='feature-1'
+        self.assertEqual(['123'], self.github_util._compare_and_get_merge_commit_hashes(
+            mock_repo, base='main', head='feature-1'
         ))
+
+    def test_get_pull_requests_between_refs_with_success(self: Self) -> None:
+        """Validate the get_pull_requests_between_refs function is successful."""
+        self.github_session.get_organization.return_value.get_repo.return_value.compare.return_value.commits = [
+            MagicMock(sha='123', parents=[1, 1]),
+            MagicMock(sha='456'),
+            MagicMock(sha='789', parents=[1, 1]),
+        ]
+        self.github_session.get_organization.return_value.get_repo.return_value.get_commit.return_value.get_pulls.return_value = [
+            MagicMock(html_url='https://foo.com/1', title='Pull Request 1', number=1),
+            MagicMock(html_url='https://foo.com/2', title='Pull Request 2', number=2)
+        ]
+        expected = [
+            PullRequest(title='Pull Request 1', number=1, url='https://foo.com/1'),
+            PullRequest(title='Pull Request 2', number=2, url='https://foo.com/2')
+        ]
+        self.assertEqual(expected, self.github_util.get_pull_requests_between_refs(repo_name='test-repo-1',
+                                                                                   base='123', head='456'))
