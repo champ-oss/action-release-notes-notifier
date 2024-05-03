@@ -1,8 +1,8 @@
 """Provide tests for diff_parser."""
 import pytest
 
-from diff_parser.RepoCommitChange import RepoCommitChange
 from diff_parser.diff_parser import DiffParser
+from diff_parser.repo_commit_change import RepoCommitChange
 
 
 def test_get_repo_commit_changes() -> None:
@@ -12,17 +12,26 @@ def test_get_repo_commit_changes() -> None:
             '--- \n',
             '+++ \n',
             '@@ -1,2 +1,2 @@\n',
-            '-test_repo_1 = "123.foo.com/test-repo-1:abc123"',
-            '+test_repo_1 = "123.foo.com/test-repo-1:abc456"',
-            '-test_repo_2 = "123.foo.com/bar/test-repo-2:def123"',
-            '+test_repo_2 = "123.foo.com/bar/test-repo-2:def456"'
+            '-test_repo_1 = "123.foo.com/test-repo-1:abc11"',
+            '+test_repo_1 = "123.foo.com/test-repo-1:abc12"',
+            '-test_repo_2 = "123.foo.com/bar/test-repo-2:abc21"',
+            '+test_repo_2 = "123.foo.com/bar/test-repo-2:abc22"',
             '-foo         = "bar1"',
-            '+foo         = "bar2"'
+            '+foo         = "bar2"',
+            '-test_repo_3 = "123.foo.com/test-repo-3:abc31"',
+            '-test_repo_4 = "123.foo.com/bar/test-repo-4:abc41"',
+            '+test_repo_3 = "123.foo.com/test-repo-3:abc32"',
+            '+test_repo_4 = "123.foo.com/bar/test-repo-4:abc42"',
+            '+test_repo_5 = "123.foo.com/bar/test-repo-5:abc52"',
+            '-test_repo_6 = "123.foo.com/bar/test-repo-6:abc61"'
         ]
     )
-    assert changes == [
-        RepoCommitChange(repository='test-repo-1', old_commit='abc123', new_commit='abc456'),
-        RepoCommitChange(repository='test-repo-2', old_commit='def123', new_commit='def456')
+    assert list(changes) == [
+        RepoCommitChange(repository='test-repo-1', old_commit='abc11', new_commit='abc12'),
+        RepoCommitChange(repository='test-repo-2', old_commit='abc21', new_commit='abc22'),
+        RepoCommitChange(repository='test-repo-3', old_commit='abc31', new_commit='abc32'),
+        RepoCommitChange(repository='test-repo-4', old_commit='abc41', new_commit='abc42'),
+        RepoCommitChange(repository='test-repo-5', old_commit='', new_commit='abc52')
     ]
 
 

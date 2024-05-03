@@ -3,7 +3,7 @@ import logging
 import re
 from typing import Optional, Iterator, List
 
-from diff_parser.RepoCommitChange import RepoCommitChange
+from diff_parser.repo_commit_change import RepoCommitChange
 
 logger = logging.getLogger(__name__)
 
@@ -19,22 +19,26 @@ class DiffParser:
         :param unified_diff: unified diff string
         :return: list of changes
         """
-        changes: List[RepoCommitChange] = []
-        diff_list = list(unified_diff)
+        changes: dict[str, RepoCommitChange] = {}
 
-        for i in range(len(diff_list)):
-            logger.info(diff_list[i])
-            if not diff_list[i].startswith('+'):
+        for line in unified_diff:
+            repo = DiffParser._parse_repo_name(line)
+            if not repo:
                 continue
+            if not changes.get(repo):
+                changes[repo] = RepoCommitChange(repository=repo)
 
-            repo = DiffParser._parse_repo_name(diff_list[i])
-            new_commit = DiffParser._parse_commit(diff_list[i])
-            old_commit = DiffParser._parse_commit(diff_list[i - 1])
-            if repo and new_commit:
-                logger.info(f'found change: repo:{repo} old-commit:{old_commit} new-commit:{new_commit}')
-                changes.append(RepoCommitChange(repository=repo, old_commit=old_commit, new_commit=new_commit))
+            if line.startswith('+'):
+                changes[repo].new_commit = DiffParser._parse_commit(line)
 
-        return changes
+            if line.startswith('-'):
+                changes[repo].old_commit = DiffParser._parse_commit(line)
+
+        for repo, change in changes.items():
+            if not change.new_commit:
+                continue
+            logger.info(f'found change: repo:{repo} old-commit:{change.old_commit} new-commit:{change.new_commit}')
+            yield change
 
     @staticmethod
     def _parse_repo_name(line: str) -> Optional[str]:
