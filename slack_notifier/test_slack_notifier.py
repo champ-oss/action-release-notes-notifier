@@ -60,6 +60,16 @@ class TestSlackNotifier(unittest.TestCase):
             slack_notifier.add_message_block('x' * 3001)
             self.assertIn('message is longer than the Slack limit of 3000 characters', logs.output[0])
 
+        self.assertEqual(slack_notifier._message_blocks, [
+            {
+                'type': 'section',
+                'text': {
+                    'type': 'mrkdwn',
+                    'text': 'x' * 3000
+                }
+            }
+        ])
+
     def test_send_message(self: Self) -> None:
         """The send_message function should be successful."""
         webhook_client = MagicMock()
