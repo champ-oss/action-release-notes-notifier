@@ -10,6 +10,8 @@ logger = logging.getLogger(__name__)
 class SlackNotifier:
     """Provides functionality to send messages to Slack."""
 
+    _message_blocks = None
+
     def __init__(self: Self, webhook_url: str, webhook_client: WebhookClient = None) -> None:
         """
         Initialize the SlackNotifier.
@@ -31,6 +33,8 @@ class SlackNotifier:
         :param at_beginning: If true, add the message to the beginning (a header for example)
         :return: None
         """
+        if not message:
+            return
         block = {
             'type': 'section',
             'text': {
