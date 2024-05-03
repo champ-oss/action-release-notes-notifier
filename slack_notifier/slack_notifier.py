@@ -40,6 +40,7 @@ class SlackNotifier:
             logger.warning('message is longer than the Slack limit of 3000 characters, '
                            'only the first 3000 characters will be sent'
                            '(https://api.slack.com/reference/block-kit/composition-objects#text)')
+            message = message[:3000].rsplit('\n', 1)[0]  # truncate the message after the last newline
 
         block = {
             'type': 'section',

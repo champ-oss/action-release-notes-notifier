@@ -56,16 +56,22 @@ class TestSlackNotifier(unittest.TestCase):
         slack_notifier = SlackNotifier('https://example.com')
         self.assertFalse(slack_notifier.has_messages())
 
+        test_message_line = 'This is a long sentence.\n'
+
         with self.assertLogs(level='WARNING') as logs:
-            slack_notifier.add_message_block('x' * 3001)
+            slack_notifier.add_message_block(test_message_line * 500)
             self.assertIn('message is longer than the Slack limit of 3000 characters', logs.output[0])
 
+        self.assertEqual(2999, len(slack_notifier._message_blocks[0]['text']['text']))
+        expected_lines = int(len(slack_notifier._message_blocks[0]['text']['text']) / len(test_message_line)) + 1
+
+        self.maxDiff = None
         self.assertEqual(slack_notifier._message_blocks, [
             {
                 'type': 'section',
                 'text': {
                     'type': 'mrkdwn',
-                    'text': 'x' * 3000
+                    'text': (test_message_line * expected_lines).strip()
                 }
             }
         ])
