@@ -127,17 +127,17 @@ class GitHubUtil:
         :param head: head ref to compare to
         :return: list of git commit hashes
         """
+        commits = []
         if not base or not head:
-            return []
+            return commits
         logger.info(f'Comparing {base} and {head} for repo:{repo.name}')
         try:
             comparison = repo.compare(base, head)
             commits = [commit.sha for commit in comparison.commits if len(commit.parents) > 1]
             logger.info(f'found {len(commits)} merge commits between {base} and {head} in {repo.name}')
-            return commits
         except (UnknownObjectException, GithubException) as e:
             logger.debug(f'compare failed with error:{e}')
-        return []
+        return commits
 
     @staticmethod
     def _update_git_tag(repo: Repository, commit: str, tag: str) -> bool:
