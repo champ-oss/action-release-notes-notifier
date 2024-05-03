@@ -51,6 +51,15 @@ class TestSlackNotifier(unittest.TestCase):
         slack_notifier.add_message_block(None)
         self.assertFalse(slack_notifier.has_messages())
 
+    def test_add_message_block_when_message_too_large(self: Self) -> None:
+        """The add_message_block function should truncate the message if the message too large."""
+        slack_notifier = SlackNotifier('https://example.com')
+        self.assertFalse(slack_notifier.has_messages())
+
+        with self.assertLogs(level='WARNING') as logs:
+            slack_notifier.add_message_block('x' * 3001)
+            self.assertIn('message is longer than the Slack limit of 3000 characters', logs.output[0])
+
     def test_send_message(self: Self) -> None:
         """The send_message function should be successful."""
         webhook_client = MagicMock()
@@ -87,6 +96,8 @@ class TestSlackNotifier(unittest.TestCase):
         """The send_message function should log a warning when there are too many blocks."""
         webhook_client = MagicMock()
         slack_notifier = SlackNotifier('https://example.com', webhook_client)
+        webhook_client.send.return_value.status_code = 200
+        webhook_client.send.return_value.body = 'ok'
 
         for _ in range(51):
             slack_notifier.add_message_block('test message')
@@ -94,6 +105,9 @@ class TestSlackNotifier(unittest.TestCase):
         self.assertTrue(slack_notifier.has_messages())
         self.assertEqual(len(slack_notifier._message_blocks), 51)
 
-        with self.assertRaises(AssertionError):
+        with self.assertLogs(level='WARNING') as logs:
             slack_notifier.send_message()
+            self.assertIn('message is greater than the Slack limit of 50 blocks', logs.output[0])
+
         webhook_client.send.assert_called_once()
+        self.assertEqual(50, len(webhook_client.send.call_args[1]['blocks']))

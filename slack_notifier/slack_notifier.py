@@ -35,11 +35,17 @@ class SlackNotifier:
         """
         if not message:
             return
+
+        if len(message) > 3000:
+            logger.warning('message is longer than the Slack limit of 3000 characters, '
+                           'only the first 3000 characters will be sent'
+                           '(https://api.slack.com/reference/block-kit/composition-objects#text)')
+
         block = {
             'type': 'section',
             'text': {
                 'type': 'mrkdwn',
-                'text': message
+                'text': message[:3000]
             }
         }
         if at_beginning:
@@ -66,10 +72,10 @@ class SlackNotifier:
             return
 
         if len(self._message_blocks) > 50:
-            logger.warning('message is greater than the Slack limit of 50 blocks '
-                           '(https://api.slack.com/reference/block-kit/blocks#section)')
+            logger.warning('message is greater than the Slack limit of 50 blocks, only the first 50 blocks will be sent'
+                           '(https://api.slack.com/reference/block-kit/blocks)')
 
         logger.info('sending message to Slack')
-        response = self._webhook_client.send(text='fallback', blocks=self._message_blocks)
+        response = self._webhook_client.send(text='fallback', blocks=self._message_blocks[:50])
         logger.info(f'response from Slack: {response.status_code} {response.body}')
         assert response.status_code == 200
