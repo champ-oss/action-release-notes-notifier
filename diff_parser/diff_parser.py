@@ -23,6 +23,7 @@ class DiffParser:
         diff_list = list(unified_diff)
 
         for i in range(len(diff_list)):
+            logger.debug(diff_list[i])
             if not diff_list[i].startswith('+'):
                 continue
 
