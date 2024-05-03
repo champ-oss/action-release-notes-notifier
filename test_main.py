@@ -25,24 +25,30 @@ class TestMain(unittest.TestCase):
                 '--- \n',
                 '+++ \n',
                 '@@ -1,2 +1,2 @@\n',
-                '-test_repo_1 = "123.foo.com/test-repo-1:abc123"',
-                '+test_repo_1 = "123.foo.com/test-repo-1:abc456"',
-                '-test_repo_2 = "123.foo.com/bar/test-repo-2:def123"',
-                '+test_repo_2 = "123.foo.com/bar/test-repo-2:def456"'
+                '-test_repo_1 = "123.foo.com/test-repo-1:abc11"',
+                '+test_repo_1 = "123.foo.com/test-repo-1:abc12"',
+                '-test_repo_2 = "123.foo.com/bar/test-repo-2:abc21"',
+                '+test_repo_2 = "123.foo.com/bar/test-repo-2:abc22"',
                 '-foo         = "bar1"',
-                '+foo         = "bar2"'
+                '+foo         = "bar2"',
+                '-test_repo_3 = "123.foo.com/test-repo-3:abc31"',
+                '-test_repo_4 = "123.foo.com/bar/test-repo-4:abc41"',
+                '+test_repo_3 = "123.foo.com/test-repo-3:abc32"',
+                '+test_repo_4 = "123.foo.com/bar/test-repo-4:abc42"',
+                '+test_repo_5 = "123.foo.com/bar/test-repo-5:abc52"',
+                '-test_repo_6 = "123.foo.com/bar/test-repo-6:abc61"'
             ]),
             FileDiff(file_name='terraform/env/dev/dev-b.tfvars', unified_diff=[
                 '--- \n',
                 '+++ \n',
                 '@@ -1,2 +1,2 @@\n',
-                '-test_repo_3 = "123.foo.com/test-repo-3:ghi123"',
-                '+test_repo_3 = "123.foo.com/test-repo-3:ghi456"',
+                '-test_repo_6 = "123.foo.com/test-repo-6:ghi123"',
+                '+test_repo_6 = "123.foo.com/test-repo-6:ghi456"',
             ])
         ]
 
         github_util = MagicMock()
-        github_util.get_pull_requests_for_commit.side_effect = [
+        github_util.get_pull_requests_between_refs.side_effect = [
             [
                 PullRequest(url='https://foo.com/test_repo_1', title='Pull Request 123a', number=123),
                 PullRequest(url='https://foo.com/test_repo_1', title='Pull Request 123b', number=124)
@@ -52,6 +58,14 @@ class TestMain(unittest.TestCase):
             ],
             [
                 PullRequest(url='https://foo.com/test_repo_3', title='Pull Request 789', number=789)
+            ],
+            [],
+            [
+                PullRequest(url='https://foo.com/test_repo_5', title='Pull Request 2221', number=2221),
+                PullRequest(url='https://foo.com/test_repo_5', title='Pull Request 2222', number=2222)
+            ],
+            [
+                PullRequest(url='https://foo.com/test_repo_6', title='Pull Request 333', number=333)
             ]
         ]
 
@@ -66,49 +80,77 @@ class TestMain(unittest.TestCase):
                   file_pattern='.*dev.*.tfvars',
                   tag_name='test-tag')
 
-        slack_client.send.assert_called_with(
-            text='fallback',
-            blocks=[
-                {
-                    'type': 'section',
-                    'text': {
-                        'type': 'mrkdwn',
-                        'text': 'The Dev environment has been updated'
-                    }
-                },
-                {
-                    'type': 'section',
-                    'text': {
-                        'type': 'mrkdwn',
-                        'text':
-                            'test-repo-1'
-                            '\n \t • *<https://foo.com/test_repo_1|Pull Request 123a>* #123'
-                            '\n \t • *<https://foo.com/test_repo_1|Pull Request 123b>* #124'
+        expected_blocks = [
+            {
+                'type': 'section',
+                'text': {
+                    'type': 'mrkdwn',
+                    'text': 'The Dev environment has been updated'
+                }
+            },
+            {
+                'type': 'section',
+                'text': {
+                    'type': 'mrkdwn',
+                    'text':
+                        'test-repo-1'
+                        '\n \t • *<https://foo.com/test_repo_1|Pull Request 123a>* #123'
+                        '\n \t • *<https://foo.com/test_repo_1|Pull Request 123b>* #124'
 
-                    }
-                },
-                {
-                    'type': 'section',
-                    'text': {
-                        'type': 'mrkdwn',
-                        'text':
-                            'test-repo-2'
-                            '\n \t • *<https://foo.com/test_repo_2|Pull Request 456>* #456'
+                }
+            },
+            {
+                'type': 'section',
+                'text': {
+                    'type': 'mrkdwn',
+                    'text':
+                        'test-repo-2'
+                        '\n \t • *<https://foo.com/test_repo_2|Pull Request 456>* #456'
 
-                    }
-                },
-                {
-                    'type': 'section',
-                    'text': {
-                        'type': 'mrkdwn',
-                        'text':
-                            'test-repo-3'
-                            '\n \t • *<https://foo.com/test_repo_3|Pull Request 789>* #789'
+                }
+            },
+            {
+                'type': 'section',
+                'text': {
+                    'type': 'mrkdwn',
+                    'text':
+                        'test-repo-3'
+                        '\n \t • *<https://foo.com/test_repo_3|Pull Request 789>* #789'
 
-                    }
-                },
-            ]
-        )
+                }
+            },
+            {
+                'type': 'section',
+                'text': {
+                    'type': 'mrkdwn',
+                    'text':
+                        'test-repo-4'
+
+                }
+            },
+            {
+                'type': 'section',
+                'text': {
+                    'type': 'mrkdwn',
+                    'text':
+                        'test-repo-5'
+                        '\n \t • *<https://foo.com/test_repo_5|Pull Request 2221>* #2221'
+                        '\n \t • *<https://foo.com/test_repo_5|Pull Request 2222>* #2222'
+
+                }
+            },
+            {
+                'type': 'section',
+                'text': {
+                    'type': 'mrkdwn',
+                    'text':
+                        'test-repo-6'
+                        '\n \t • *<https://foo.com/test_repo_6|Pull Request 333>* #333'
+
+                }
+            },
+        ]
+        self.assertEqual(expected_blocks, slack_client.send.call_args.kwargs['blocks'])
 
     def test_main_slack_message_should_be_none_when_summary_is_empty(self: Self) -> None:
         """The Slack message should be None e when no repo information is added to the summary."""

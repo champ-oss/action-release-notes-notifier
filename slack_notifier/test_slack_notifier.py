@@ -43,6 +43,14 @@ class TestSlackNotifier(unittest.TestCase):
         ])
         self.assertTrue(slack_notifier.has_messages())
 
+    def test_add_message_block_when_message_empty(self: Self) -> None:
+        """The add_message_block function should not add a message block if the message is empty."""
+        slack_notifier = SlackNotifier('https://example.com')
+        self.assertFalse(slack_notifier.has_messages())
+        slack_notifier.add_message_block('')
+        slack_notifier.add_message_block(None)
+        self.assertFalse(slack_notifier.has_messages())
+
     def test_send_message(self: Self) -> None:
         """The send_message function should be successful."""
         webhook_client = MagicMock()
